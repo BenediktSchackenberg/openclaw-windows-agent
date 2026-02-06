@@ -266,8 +266,6 @@ public class GatewayService : IDisposable
     private async Task<ConnectResult> SendConnectRequestAsync(ClientWebSocket ws, string? token, string? nonce, CancellationToken ct)
     {
         var requestId = Interlocked.Increment(ref _requestId).ToString();
-        var deviceId = $"win-{Environment.MachineName.GetHashCode():X8}";
-        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         
         // Build connect request following OpenClaw Gateway Protocol v3
         // When allowInsecureAuth is enabled on the gateway, device can be omitted
@@ -300,7 +298,7 @@ public class GatewayService : IDisposable
         };
 
         var json = JsonSerializer.Serialize(request, JsonOptions);
-        Log($"Sending connect request: {json.Substring(0, Math.Min(500, json.Length))}...");
+        Log($"Sending connect request (full): {json}");
         var bytes = Encoding.UTF8.GetBytes(json);
         
         await ws.SendAsync(bytes, WebSocketMessageType.Text, true, ct);
