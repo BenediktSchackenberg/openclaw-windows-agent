@@ -1,4 +1,6 @@
+using System;
 using System.Windows;
+using OpenClawAgent.Views;
 
 namespace OpenClawAgent;
 
