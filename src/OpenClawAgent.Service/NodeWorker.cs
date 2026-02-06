@@ -154,6 +154,8 @@ public class NodeWorker : BackgroundService
             }
         };
 
+        var requestJson = JsonSerializer.Serialize(request, JsonOptions);
+        _logger.LogInformation("Connect request: {Request}", requestJson);
         await SendJsonAsync(request, ct);
         _logger.LogInformation("Sent connect request");
 
