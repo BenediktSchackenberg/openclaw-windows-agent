@@ -8,144 +8,303 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <TextBlock Grid.Row="0" Text="Dashboard" FontSize="24" FontWeight="Bold" 
-                   Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,20"/>
+        <Grid Grid.Row="0" Margin="0,0,0,20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            
+            <StackPanel>
+                <TextBlock Text="Dashboard" FontSize="28" FontWeight="Bold" 
+                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                <TextBlock Text="Übersicht über Gateway, Service und Live-Aktivität" 
+                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="13"/>
+            </StackPanel>
+            
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Content="🔄 Aktualisieren" Style="{StaticResource SecondaryButtonStyle}" 
+                        Command="{Binding RefreshStatusCommand}" Margin="0,0,8,0"/>
+                <Button Content="🗑️ Logs löschen" Style="{StaticResource SecondaryButtonStyle}" 
+                        Command="{Binding ClearLogsCommand}"/>
+            </StackPanel>
+        </Grid>
 
-        <!-- Content -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+        <!-- Status Cards Row -->
+        <UniformGrid Grid.Row="1" Columns="4" Margin="0,0,0,16">
+            <!-- Gateway Status Card -->
+            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="16" Margin="0,0,8,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="🔗" FontSize="16" Margin="0,0,6,0"/>
+                        <TextBlock Text="GATEWAY" FontWeight="Bold" FontSize="11"
+                                   Foreground="{StaticResource TextSecondaryBrush}"/>
+                    </StackPanel>
+                    
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,4">
+                        <Ellipse Width="10" Height="10" Margin="0,0,8,0" VerticalAlignment="Center">
+                            <Ellipse.Style>
+                                <Style TargetType="Ellipse">
+                                    <Setter Property="Fill" Value="{StaticResource ErrorBrush}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding GatewayConnected}" Value="True">
+                                            <Setter Property="Fill" Value="{StaticResource SuccessBrush}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Ellipse.Style>
+                        </Ellipse>
+                        <TextBlock FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Text" Value="Offline"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding GatewayConnected}" Value="True">
+                                            <Setter Property="Text" Value="Online"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </StackPanel>
+                    
+                    <TextBlock Grid.Row="2" Text="{Binding GatewayUrl}" 
+                               Foreground="{StaticResource TextSecondaryBrush}" 
+                               FontSize="11" TextTrimming="CharacterEllipsis"/>
+                </Grid>
+            </Border>
+
+            <!-- Service Status Card -->
+            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="16" Margin="4,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="⚙️" FontSize="16" Margin="0,0,6,0"/>
+                        <TextBlock Text="SERVICE" FontWeight="Bold" FontSize="11"
+                                   Foreground="{StaticResource TextSecondaryBrush}"/>
+                    </StackPanel>
+                    
+                    <TextBlock Grid.Row="1" Text="{Binding ServiceStatus}" 
+                               FontSize="16" FontWeight="Bold" 
+                               Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,4"/>
+                    
+                    <TextBlock Grid.Row="2" Text="Windows Node Agent" 
+                               Foreground="{StaticResource TextSecondaryBrush}" FontSize="11"/>
+                </Grid>
+            </Border>
+
+            <!-- Active Sessions Card -->
+            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="16" Margin="4,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="💬" FontSize="16" Margin="0,0,6,0"/>
+                        <TextBlock Text="SESSIONS" FontWeight="Bold" FontSize="11"
+                                   Foreground="{StaticResource TextSecondaryBrush}"/>
+                    </StackPanel>
+                    
+                    <TextBlock Grid.Row="1" Text="{Binding ActiveSessions}" 
+                               FontSize="28" FontWeight="Bold" 
+                               Foreground="{StaticResource PrimaryBrush}"/>
+                    
+                    <TextBlock Grid.Row="2" Text="aktive Sessions" 
+                               Foreground="{StaticResource TextSecondaryBrush}" FontSize="11"/>
+                </Grid>
+            </Border>
+
+            <!-- Cron Jobs Card -->
+            <Border Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="16" Margin="8,0,0,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="⏰" FontSize="16" Margin="0,0,6,0"/>
+                        <TextBlock Text="CRON JOBS" FontWeight="Bold" FontSize="11"
+                                   Foreground="{StaticResource TextSecondaryBrush}"/>
+                    </StackPanel>
+                    
+                    <TextBlock Grid.Row="1" Text="{Binding CronJobs}" 
+                               FontSize="28" FontWeight="Bold" 
+                               Foreground="{StaticResource TextPrimaryBrush}"/>
+                    
+                    <TextBlock Grid.Row="2" Text="geplante Jobs" 
+                               Foreground="{StaticResource TextSecondaryBrush}" FontSize="11"/>
+                </Grid>
+            </Border>
+        </UniformGrid>
+
+        <!-- Info Bar -->
+        <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" 
+                CornerRadius="8" Padding="16,12" Margin="0,0,0,16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="📡 Uptime:" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,8,0"/>
+                    <TextBlock Text="{Binding GatewayUptime}" Foreground="{StaticResource TextPrimaryBrush}" FontWeight="SemiBold"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center">
+                    <TextBlock Text="🔄 Letzter Sync:" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,8,0"/>
+                    <TextBlock Text="{Binding LastSync}" Foreground="{StaticResource TextPrimaryBrush}" FontWeight="SemiBold"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <TextBlock Text="🖥️ Host:" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,8,0"/>
+                    <TextBlock Text="{Binding Source={x:Static System:Environment.MachineName}}" 
+                               Foreground="{StaticResource TextPrimaryBrush}" FontWeight="SemiBold"
+                               xmlns:System="clr-namespace:System;assembly=mscorlib"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Live Logs Section -->
+        <Border Grid.Row="3" Background="{StaticResource SurfaceBrush}" CornerRadius="12" Padding="0">
             <Grid>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <!-- Status Cards Row -->
-                <UniformGrid Grid.Row="0" Columns="3" Margin="0,0,0,20">
-                    <!-- Gateway Status Card -->
-                    <Border Style="{StaticResource CardStyle}" Margin="0,0,10,0">
-                        <StackPanel>
-                            <TextBlock Text="🔗 Gateway" FontWeight="SemiBold" 
-                                       Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,8"/>
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <Ellipse Width="12" Height="12" Margin="0,0,8,0">
-                                    <Ellipse.Style>
-                                        <Style TargetType="Ellipse">
-                                            <Setter Property="Fill" Value="{StaticResource ErrorBrush}"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding GatewayConnected}" Value="True">
-                                                    <Setter Property="Fill" Value="{StaticResource SuccessBrush}"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Ellipse.Style>
-                                </Ellipse>
-                                <TextBlock FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}">
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="Text" Value="Disconnected"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding GatewayConnected}" Value="True">
-                                                    <Setter Property="Text" Value="Connected"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
-                            </StackPanel>
-                            <TextBlock Text="{Binding GatewayUrl}" Foreground="{StaticResource TextSecondaryBrush}" 
-                                       FontSize="12" Margin="0,4,0,0"/>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Active Sessions Card -->
-                    <Border Style="{StaticResource CardStyle}" Margin="5,0">
-                        <StackPanel>
-                            <TextBlock Text="💬 Sessions" FontWeight="SemiBold" 
-                                       Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,8"/>
-                            <TextBlock Text="{Binding ActiveSessions}" FontSize="32" FontWeight="Bold" 
-                                       Foreground="{StaticResource PrimaryBrush}"/>
-                            <TextBlock Text="active sessions" Foreground="{StaticResource TextSecondaryBrush}" 
-                                       FontSize="12"/>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Cron Jobs Card -->
-                    <Border Style="{StaticResource CardStyle}" Margin="10,0,0,0">
-                        <StackPanel>
-                            <TextBlock Text="⏰ Cron Jobs" FontWeight="SemiBold" 
-                                       Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,8"/>
-                            <TextBlock Text="{Binding CronJobs}" FontSize="32" FontWeight="Bold" 
-                                       Foreground="{StaticResource TextPrimaryBrush}"/>
-                            <TextBlock Text="scheduled jobs" Foreground="{StaticResource TextSecondaryBrush}" 
-                                       FontSize="12"/>
-                        </StackPanel>
-                    </Border>
-                </UniformGrid>
-
-                <!-- Info Section -->
-                <Border Grid.Row="1" Style="{StaticResource CardStyle}" Margin="0,0,0,20">
+                <!-- Logs Header -->
+                <Border Background="{StaticResource CardBrush}" CornerRadius="12,12,0,0" Padding="16,12">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-
-                        <StackPanel Grid.Column="0">
-                            <TextBlock Text="Agent Information" FontWeight="Bold" 
-                                       Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,12"/>
-                            
-                            <Grid Margin="0,0,0,8">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="120"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="Client ID:" Foreground="{StaticResource TextSecondaryBrush}"/>
-                                <TextBlock Grid.Column="1" Text="{Binding DataContext.ClientId, RelativeSource={RelativeSource AncestorType=Window}}" 
-                                           Foreground="{StaticResource TextPrimaryBrush}" FontFamily="{StaticResource MonoFont}"/>
-                            </Grid>
-
-                            <Grid Margin="0,0,0,8">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="120"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="Last Sync:" Foreground="{StaticResource TextSecondaryBrush}"/>
-                                <TextBlock Grid.Column="1" Text="{Binding LastSync}" Foreground="{StaticResource TextPrimaryBrush}"/>
-                            </Grid>
-
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="120"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="Uptime:" Foreground="{StaticResource TextSecondaryBrush}"/>
-                                <TextBlock Grid.Column="1" Text="{Binding GatewayUptime}" Foreground="{StaticResource TextPrimaryBrush}"/>
-                            </Grid>
+                        
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="📋" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Live Gateway Logs" FontWeight="Bold" FontSize="14"
+                                       Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center"/>
+                            <Border Background="{StaticResource PrimaryBrush}" CornerRadius="10" 
+                                    Padding="8,2" Margin="12,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Logs.Count, StringFormat='{}{0} Einträge'}" 
+                                           Foreground="White" FontSize="11" FontWeight="SemiBold"/>
+                            </Border>
                         </StackPanel>
-
-                        <StackPanel Grid.Column="1">
-                            <TextBlock Text="Quick Actions" FontWeight="Bold" 
-                                       Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,12"/>
-                            
-                            <Button Content="🔄 Refresh Status" Style="{StaticResource SecondaryButtonStyle}" 
-                                    Command="{Binding RefreshStatusAsyncCommand}"
-                                    HorizontalAlignment="Left" Margin="0,0,0,8"/>
-                            <Button Content="📋 View Logs" Style="{StaticResource SecondaryButtonStyle}" 
-                                    Command="{Binding DataContext.NavigateToLogsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                    HorizontalAlignment="Left" Margin="0,0,0,8"/>
-                            <Button Content="⚙️ Open Settings" Style="{StaticResource SecondaryButtonStyle}" 
-                                    Command="{Binding DataContext.OpenSettingsCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                    HorizontalAlignment="Left"/>
-                        </StackPanel>
+                        
+                        <TextBlock Grid.Column="1" Text="Auto-Refresh alle 5 Sekunden" 
+                                   Foreground="{StaticResource TextSecondaryBrush}" 
+                                   FontSize="11" VerticalAlignment="Center"/>
                     </Grid>
                 </Border>
 
+                <!-- Logs List -->
+                <ListBox Grid.Row="1" 
+                         ItemsSource="{Binding Logs}" 
+                         Background="Transparent"
+                         BorderThickness="0"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         VirtualizingPanel.ScrollUnit="Pixel"
+                         x:Name="LogsListBox">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Padding" Value="0"/>
+                            <Setter Property="Margin" Value="0"/>
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <Border Background="{TemplateBinding Background}" 
+                                                BorderThickness="0,0,0,1" 
+                                                BorderBrush="{StaticResource CardBrush}"
+                                                Padding="16,10">
+                                            <ContentPresenter/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <Style.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="{StaticResource CardBrush}"/>
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="{StaticResource CardBrush}"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="70"/>
+                                    <ColumnDefinition Width="30"/>
+                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Timestamp -->
+                                <TextBlock Grid.Column="0" 
+                                           Text="{Binding TimeString}" 
+                                           FontFamily="{StaticResource MonoFont}"
+                                           FontSize="12"
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           VerticalAlignment="Center"/>
+
+                                <!-- Level Emoji -->
+                                <TextBlock Grid.Column="1" 
+                                           Text="{Binding LevelEmoji}" 
+                                           FontSize="14"
+                                           VerticalAlignment="Center"
+                                           HorizontalAlignment="Center"/>
+
+                                <!-- Source -->
+                                <Border Grid.Column="2" 
+                                        Background="{StaticResource CardBrush}" 
+                                        CornerRadius="4" 
+                                        Padding="8,3" 
+                                        Margin="0,0,12,0"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Source}" 
+                                               FontSize="11" 
+                                               FontWeight="SemiBold"
+                                               Foreground="{StaticResource PrimaryBrush}"/>
+                                </Border>
+
+                                <!-- Message -->
+                                <TextBlock Grid.Column="3" 
+                                           Text="{Binding Message}" 
+                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                           TextTrimming="CharacterEllipsis"
+                                           VerticalAlignment="Center"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
             </Grid>
-        </ScrollViewer>
+        </Border>
     </Grid>
 </UserControl>
