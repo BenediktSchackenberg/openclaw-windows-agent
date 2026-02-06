@@ -1,0 +1,41 @@
+# Build output
+bin/
+obj/
+out/
+dist/
+build/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.rsuser
+
+# NuGet
+packages/
+*.nupkg
+project.lock.json
+project.fragment.lock.json
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Secrets
+*.env
+.env.*
+appsettings.Development.json
+appsettings.Local.json
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
