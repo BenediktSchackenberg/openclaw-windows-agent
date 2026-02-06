@@ -413,6 +413,8 @@ public class NodeWorker : BackgroundService
     private async Task<object> HandleSystemRunFromPayloadAsync(JsonElement payload, CancellationToken ct)
     {
         var command = new List<string>();
+        bool background = false;  // Don't wait for exit
+        int timeoutMs = 30000;    // Default 30s timeout
         
         // Try direct "command" array first
         if (payload.TryGetProperty("command", out var cmdProp) &&
@@ -425,19 +427,35 @@ public class NodeWorker : BackgroundService
             }
         }
 
+        // Check for background flag
+        if (payload.TryGetProperty("background", out var bgProp))
+        {
+            background = bgProp.GetBoolean();
+        }
+
+        // Check for timeout
+        if (payload.TryGetProperty("timeoutMs", out var timeoutProp))
+        {
+            timeoutMs = timeoutProp.GetInt32();
+        }
+
         if (command.Count == 0)
             throw new ArgumentException("No command specified");
 
-        _logger.LogInformation("Executing: {Command}", string.Join(" ", command));
+        _logger.LogInformation("Executing: {Command} (background: {Background})", string.Join(" ", command), background);
 
         var psi = new ProcessStartInfo
         {
             FileName = command[0],
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true
+            UseShellExecute = background,  // UseShellExecute for GUI apps
+            CreateNoWindow = !background
         };
+
+        if (!background)
+        {
+            psi.RedirectStandardOutput = true;
+            psi.RedirectStandardError = true;
+        }
 
         for (int i = 1; i < command.Count; i++)
             psi.ArgumentList.Add(command[i]);
@@ -446,17 +464,49 @@ public class NodeWorker : BackgroundService
         if (process == null)
             throw new Exception("Failed to start process");
 
-        var stdout = await process.StandardOutput.ReadToEndAsync(ct);
-        var stderr = await process.StandardError.ReadToEndAsync(ct);
-        
-        await process.WaitForExitAsync(ct);
-
-        return new
+        // For background processes, just return the PID
+        if (background)
         {
-            exitCode = process.ExitCode,
-            stdout = stdout,
-            stderr = stderr
-        };
+            return new
+            {
+                pid = process.Id,
+                started = true,
+                background = true
+            };
+        }
+
+        // For foreground processes, wait with timeout
+        using var timeoutCts = new CancellationTokenSource(timeoutMs);
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
+
+        try
+        {
+            var stdout = await process.StandardOutput.ReadToEndAsync(linkedCts.Token);
+            var stderr = await process.StandardError.ReadToEndAsync(linkedCts.Token);
+            
+            await process.WaitForExitAsync(linkedCts.Token);
+
+            return new
+            {
+                exitCode = process.ExitCode,
+                stdout = stdout,
+                stderr = stderr
+            };
+        }
+        catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
+        {
+            // Timeout - kill process and return partial result
+            try { process.Kill(); } catch { }
+            
+            return new
+            {
+                exitCode = -1,
+                stdout = "",
+                stderr = "",
+                timedOut = true,
+                message = $"Process timed out after {timeoutMs}ms"
+            };
+        }
     }
 
     private object HandleSystemWhichFromPayload(JsonElement payload)
