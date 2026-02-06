@@ -1,6 +1,6 @@
 using System.Windows;
 
-namespace OpenClawAgent;
+namespace OpenClawAgent.Views;
 
 /// <summary>
 /// Main application window

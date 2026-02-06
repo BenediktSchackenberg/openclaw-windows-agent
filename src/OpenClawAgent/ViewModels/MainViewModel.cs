@@ -36,7 +36,7 @@ public partial class MainViewModel : ObservableObject
     public MainViewModel()
     {
         // Initialize with dashboard view
-        CurrentView = new DashboardViewModel();
+        CurrentView = new Views.DashboardView { DataContext = new DashboardViewModel() };
         UpdateConnectionStatus();
     }
 
@@ -68,31 +68,31 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void NavigateToDashboard()
     {
-        CurrentView = new DashboardViewModel();
+        CurrentView = new Views.DashboardView { DataContext = new DashboardViewModel() };
     }
 
     [RelayCommand]
     private void NavigateToGateways()
     {
-        CurrentView = new GatewaysViewModel();
+        CurrentView = new Views.GatewaysView { DataContext = new GatewaysViewModel() };
     }
 
     [RelayCommand]
     private void NavigateToCommands()
     {
-        CurrentView = new CommandsViewModel();
+        CurrentView = new Views.CommandsView { DataContext = new CommandsViewModel() };
     }
 
     [RelayCommand]
     private void NavigateToHosts()
     {
-        CurrentView = new HostsViewModel();
+        CurrentView = new Views.HostsView { DataContext = new HostsViewModel() };
     }
 
     [RelayCommand]
     private void NavigateToLogs()
     {
-        CurrentView = new LogsViewModel();
+        CurrentView = new Views.LogsView { DataContext = new LogsViewModel() };
     }
 
     private static string GenerateClientId()

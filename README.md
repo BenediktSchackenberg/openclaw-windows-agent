@@ -6,6 +6,10 @@ A native Windows agent/node for [OpenClaw](https://openclaw.ai) with GUI, gatewa
 ![Windows](https://img.shields.io/badge/Windows-10%2F11-0078D6?style=flat-square&logo=windows)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 
+## Screenshots
+
+*Coming soon — build the project to see the UI!*
+
 ## Features
 
 - 🔗 **Gateway Connection** — Connect to OpenClaw Gateway with secure token authentication
@@ -13,13 +17,14 @@ A native Windows agent/node for [OpenClaw](https://openclaw.ai) with GUI, gatewa
 - 💬 **Command Terminal** — Execute OpenClaw commands with history and output
 - 🖥️ **Remote Deployment** — Push agent to other Windows machines via WinRM
 - 📊 **Status Dashboard** — Real-time monitoring of agent and gateway status
+- 📋 **Log Viewer** — View, filter, and export application logs
 - 🔔 **System Tray** — Run minimized with status notifications
 
 ## Requirements
 
 - Windows 10 (1903+) or Windows 11
 - Windows Server 2019 or later
-- .NET 8.0 Runtime
+- .NET 8.0 Runtime (or SDK for building)
 
 ## Installation
 
@@ -36,6 +41,9 @@ A native Windows agent/node for [OpenClaw](https://openclaw.ai) with GUI, gatewa
 git clone https://github.com/BenediktSchackenberg/openclaw-windows-agent.git
 cd openclaw-windows-agent
 
+# Restore packages
+dotnet restore
+
 # Build
 dotnet build -c Release
 
@@ -43,40 +51,61 @@ dotnet build -c Release
 dotnet run --project src/OpenClawAgent
 ```
 
+Or open `OpenClawAgent.sln` in Visual Studio and press F5.
+
 ## Quick Start
 
 ### 1. Connect to Gateway
 
 1. Open the app
-2. Go to **Gateways** → **Add Gateway**
-3. Enter your Gateway URL and Token
-4. Click **Connect**
+2. Go to **Gateways** in the sidebar
+3. Enter Gateway Name, URL, and Token
+4. Click **Add Gateway**
+5. Select the gateway and click **Connect**
 
 ### 2. Run Commands
 
-1. Go to **Commands**
-2. Type any OpenClaw command (e.g., `status`, `config`)
+1. Go to **Commands** in the sidebar
+2. Type any OpenClaw command (e.g., `status`, `help`)
 3. Press Enter or click **Run**
+4. Use ↑/↓ arrows to navigate command history
 
 ### 3. Deploy to Remote Hosts
 
-1. Go to **Remote Hosts**
-2. Click **Add Host**
-3. Enter hostname, credentials
-4. Click **Deploy**
+1. Go to **Remote Hosts** in the sidebar
+2. Click **Add Host** and enter hostname, username, password
+3. Select WinRM connection type
+4. Click **Deploy Agent** to push the agent to that machine
 
 ## Project Structure
 
 ```
 src/OpenClawAgent/
+├── Converters/          # XAML value converters
+│   └── Converters.cs
 ├── Models/              # Data models
+│   ├── GatewayConfig.cs
+│   └── RemoteHost.cs
 ├── Services/            # Business logic
-│   ├── GatewayService.cs       # Gateway communication
-│   ├── CredentialService.cs    # Secure credential storage
-│   └── RemoteDeploymentService.cs  # WinRM deployment
+│   ├── GatewayService.cs          # Gateway API communication
+│   ├── CredentialService.cs       # Secure credential storage (DPAPI)
+│   └── RemoteDeploymentService.cs # WinRM/PowerShell deployment
 ├── ViewModels/          # MVVM ViewModels
+│   ├── MainViewModel.cs
+│   ├── DashboardViewModel.cs
+│   ├── GatewaysViewModel.cs
+│   ├── CommandsViewModel.cs
+│   ├── HostsViewModel.cs
+│   └── LogsViewModel.cs
 ├── Views/               # WPF XAML views
-├── Themes/              # OpenClaw styling
+│   ├── MainWindow.xaml
+│   ├── DashboardView.xaml
+│   ├── GatewaysView.xaml
+│   ├── CommandsView.xaml
+│   ├── HostsView.xaml
+│   └── LogsView.xaml
+├── Themes/              # OpenClaw dark theme
+│   └── OpenClawTheme.xaml
 └── Assets/              # Icons, images
 ```
 
@@ -86,12 +115,12 @@ Config is stored in `%APPDATA%\OpenClaw\Agent\`:
 
 ```
 %APPDATA%\OpenClaw\Agent\
-├── gateways.json      # Encrypted gateway configs
+├── gateways.json      # Encrypted gateway configs (DPAPI)
 ├── settings.json      # App settings
 └── logs/              # Application logs
 ```
 
-Credentials are encrypted using Windows DPAPI (CurrentUser scope).
+**All credentials are encrypted using Windows DPAPI** (CurrentUser scope) — they cannot be read by other users or on other machines.
 
 ## Security
 
@@ -99,8 +128,9 @@ Credentials are encrypted using Windows DPAPI (CurrentUser scope).
 - **No Admin Required** — Runs with standard user privileges (admin only for remote deployment)
 - **TLS Required** — All gateway communication over HTTPS
 - **Least Privilege** — Minimal permissions requested
+- **No Telemetry** — No data sent anywhere except your configured gateway
 
-## Remote Deployment
+## Remote Deployment via WinRM
 
 The agent can deploy itself to other Windows machines using PowerShell Remoting (WinRM).
 
@@ -109,6 +139,9 @@ The agent can deploy itself to other Windows machines using PowerShell Remoting 
 ```powershell
 # Enable WinRM (run as Admin on target)
 Enable-PSRemoting -Force
+
+# If needed, allow connections from your machine
+Set-Item WSMan:\localhost\Client\TrustedHosts -Value "your-admin-machine"
 ```
 
 ### Deployment Process
@@ -117,7 +150,7 @@ Enable-PSRemoting -Force
 2. Checks for existing OpenClaw installation
 3. Copies and installs agent MSI
 4. Configures gateway connection
-5. Starts agent service
+5. Starts agent service or application
 
 ## Development
 
@@ -125,8 +158,9 @@ Enable-PSRemoting -Force
 
 - **Framework:** .NET 8.0 + WPF
 - **Pattern:** MVVM (CommunityToolkit.Mvvm)
-- **UI:** Custom OpenClaw theme
+- **UI:** Custom OpenClaw dark theme
 - **Tray:** Hardcodet.NotifyIcon.Wpf
+- **Remote:** Microsoft.PowerShell.SDK
 
 ### Building
 
@@ -137,8 +171,8 @@ dotnet build
 # Release build
 dotnet build -c Release
 
-# Publish self-contained
-dotnet publish -c Release -r win-x64 --self-contained
+# Publish self-contained (no .NET runtime required on target)
+dotnet publish -c Release -r win-x64 --self-contained -o ./dist
 ```
 
 ### Code Signing
@@ -151,15 +185,21 @@ signtool sign /f certificate.pfx /p password /tr http://timestamp.digicert.com /
 
 ## Roadmap
 
-- [ ] v0.1.0 — MVP: Gateway connection, basic UI
-- [ ] v0.2.0 — Command terminal with history
-- [ ] v0.3.0 — Remote deployment via WinRM
-- [ ] v0.4.0 — MSI installer, code signing
-- [ ] v1.0.0 — Production release
+- [x] v0.1.0 — Project structure, MVVM architecture
+- [x] v0.2.0 — All views implemented (Dashboard, Gateways, Commands, Hosts, Logs)
+- [ ] v0.3.0 — Full gateway integration, real-time status
+- [ ] v0.4.0 — Remote deployment tested and working
+- [ ] v0.5.0 — System tray, auto-start, notifications
+- [ ] v1.0.0 — MSI installer, code signing, production release
 
 ## Contributing
 
-Contributions welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
+Contributions welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a Pull Request
 
 ## License
 
