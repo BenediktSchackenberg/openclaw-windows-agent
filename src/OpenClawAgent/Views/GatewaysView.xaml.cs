@@ -6,22 +6,19 @@ namespace OpenClawAgent.Views;
 
 public partial class GatewaysView : UserControl
 {
-    private readonly GatewaysViewModel _viewModel;
-
     public GatewaysView()
     {
         InitializeComponent();
-        _viewModel = new GatewaysViewModel();
-        DataContext = _viewModel;
+        // DataContext is set by MainViewModel when navigating
     }
 
     // PasswordBox can't be bound directly in WPF (security restriction)
     // So we handle it in code-behind
     private void TokenBox_PasswordChanged(object sender, RoutedEventArgs e)
     {
-        if (sender is PasswordBox passwordBox)
+        if (sender is PasswordBox passwordBox && DataContext is GatewaysViewModel viewModel)
         {
-            _viewModel.NewGatewayToken = passwordBox.Password;
+            viewModel.NewGatewayToken = passwordBox.Password;
         }
     }
 }

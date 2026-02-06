@@ -111,7 +111,7 @@
                 <TextBlock Grid.Column="2" Text="{Binding GatewayVersion, StringFormat='Gateway: {0}'}" 
                            Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="20,0"/>
                 
-                <TextBlock Grid.Column="3" Text="v0.1.0" 
+                <TextBlock Grid.Column="3" Text="v0.2.0" 
                            Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"/>
             </Grid>
         </Border>

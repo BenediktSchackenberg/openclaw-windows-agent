@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
@@ -10,7 +11,7 @@ using OpenClawAgent.Models;
 namespace OpenClawAgent.Services;
 
 /// <summary>
-/// Service for communicating with OpenClaw Gateway via WebSocket protocol
+/// Service for communicating with OpenClaw Gateway via WebSocket protocol v3
 /// </summary>
 public class GatewayService : IDisposable
 {
@@ -23,6 +24,7 @@ public class GatewayService : IDisposable
     public bool IsConnected => _webSocket?.State == WebSocketState.Open;
     public event EventHandler<ConnectionStateChangedEventArgs>? ConnectionStateChanged;
     public event EventHandler<GatewayMessageEventArgs>? MessageReceived;
+    public event EventHandler<string>? DebugMessage;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -30,26 +32,55 @@ public class GatewayService : IDisposable
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
+    private void Log(string message)
+    {
+        Debug.WriteLine($"[GatewayService] {message}");
+        DebugMessage?.Invoke(this, message);
+    }
+
     public async Task<ConnectionTestResult> TestConnectionAsync(GatewayConfig gateway)
     {
         try
         {
             using var ws = new ClientWebSocket();
             var wsUrl = GetWebSocketUrl(gateway.Url);
+            Log($"Testing connection to {wsUrl}");
             var startTime = DateTime.Now;
             
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
             await ws.ConnectAsync(new Uri(wsUrl), cts.Token);
             
             var latency = (int)(DateTime.Now - startTime).TotalMilliseconds;
+            Log($"WebSocket connected in {latency}ms");
 
             if (ws.State == WebSocketState.Open)
             {
                 // Wait for challenge
                 var challengeMsg = await ReceiveMessageAsync(ws, cts.Token);
+                Log($"Received challenge: {challengeMsg?.Substring(0, Math.Min(200, challengeMsg?.Length ?? 0))}...");
+                
+                // Extract nonce from challenge
+                string? nonce = null;
+                if (challengeMsg != null)
+                {
+                    try
+                    {
+                        var challenge = JsonSerializer.Deserialize<GatewayEvent>(challengeMsg, JsonOptions);
+                        if (challenge?.Event == "connect.challenge" && challenge.Payload.HasValue)
+                        {
+                            nonce = challenge.Payload.Value.GetProperty("nonce").GetString();
+                            Log($"Challenge nonce: {nonce}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log($"Failed to parse challenge: {ex.Message}");
+                    }
+                }
                 
                 // Send connect request
-                var connectResult = await SendConnectRequestAsync(ws, gateway.Token, null, cts.Token);
+                var connectResult = await SendConnectRequestAsync(ws, gateway.Token, nonce, cts.Token);
+                Log($"Connect result: ok={connectResult.Ok}, error={connectResult.Error}");
                 
                 await ws.CloseAsync(WebSocketCloseStatus.NormalClosure, "Test complete", CancellationToken.None);
                 
@@ -90,6 +121,8 @@ public class GatewayService : IDisposable
 
     public async Task ConnectAsync(GatewayConfig gateway)
     {
+        Log($"ConnectAsync starting for {gateway.Url}");
+        
         // Disconnect existing connection
         if (_currentGateway != null)
         {
@@ -100,6 +133,7 @@ public class GatewayService : IDisposable
         _webSocket = new ClientWebSocket();
 
         var wsUrl = GetWebSocketUrl(gateway.Url);
+        Log($"Connecting to WebSocket: {wsUrl}");
         
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         await _webSocket.ConnectAsync(new Uri(wsUrl), cts.Token);
@@ -108,20 +142,32 @@ public class GatewayService : IDisposable
         {
             throw new Exception("WebSocket connection failed");
         }
+        Log("WebSocket connected, waiting for challenge...");
 
         // Wait for challenge event
         var challengeMsg = await ReceiveMessageAsync(_webSocket, cts.Token);
         if (challengeMsg != null)
         {
-            var challengeEvent = JsonSerializer.Deserialize<GatewayEvent>(challengeMsg, JsonOptions);
-            if (challengeEvent?.Event == "connect.challenge")
+            Log($"Received: {challengeMsg.Substring(0, Math.Min(200, challengeMsg.Length))}...");
+            try
             {
-                _challengeNonce = challengeEvent.Payload?.GetProperty("nonce").GetString();
+                var challengeEvent = JsonSerializer.Deserialize<GatewayEvent>(challengeMsg, JsonOptions);
+                if (challengeEvent?.Event == "connect.challenge" && challengeEvent.Payload.HasValue)
+                {
+                    _challengeNonce = challengeEvent.Payload.Value.GetProperty("nonce").GetString();
+                    Log($"Got challenge nonce: {_challengeNonce}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log($"Failed to parse challenge: {ex.Message}");
             }
         }
 
         // Send connect request
+        Log("Sending connect request...");
         var connectResult = await SendConnectRequestAsync(_webSocket, gateway.Token, _challengeNonce, cts.Token);
+        Log($"Connect response: ok={connectResult.Ok}, version={connectResult.Version}, error={connectResult.Error}");
         
         if (!connectResult.Ok)
         {
@@ -132,6 +178,7 @@ public class GatewayService : IDisposable
         _currentGateway.IsConnected = true;
         _currentGateway.Version = connectResult.Version;
         _currentGateway.LastConnected = DateTime.Now;
+        Log($"Connected successfully! Protocol version: {connectResult.Version}");
 
         // Start receive loop
         _receiveCts = new CancellationTokenSource();
@@ -205,8 +252,10 @@ public class GatewayService : IDisposable
         var deviceId = $"win-{Environment.MachineName.GetHashCode():X8}";
         var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         
-        // Use 'cli' as client.id since that's a known/allowed value
-        // Generate a dummy signature for now (gateway may require proper crypto later)
+        // Build connect request following OpenClaw Gateway Protocol v3
+        // client.id = identifier for the client type (from GATEWAY_CLIENT_IDS)
+        // client.mode = connection mode (operator clients use "ui" or "cli")
+        // role = authorization role ("operator" for control plane clients)
         var request = new
         {
             type = "req",
@@ -218,10 +267,10 @@ public class GatewayService : IDisposable
                 maxProtocol = 3,
                 client = new
                 {
-                    id = "cli",
+                    id = "openclaw-control-ui",  // Known client ID for control UIs
                     version = "0.2.0",
                     platform = "windows",
-                    mode = "cli"  // Must be one of: webchat, cli, ui, backend, node, probe, test
+                    mode = "ui"  // UI mode for graphical control clients
                 },
                 role = "operator",
                 scopes = new[] { "operator.read", "operator.write" },
@@ -229,42 +278,76 @@ public class GatewayService : IDisposable
                 commands = Array.Empty<string>(),
                 permissions = new { },
                 auth = new { token = token ?? "" },
-                locale = "en-US",
-                userAgent = "openclaw-cli/0.2.0 (Windows)",
+                locale = System.Globalization.CultureInfo.CurrentCulture.Name,
+                userAgent = $"openclaw-windows-agent/0.2.0 ({Environment.OSVersion.Platform})",
                 device = new
                 {
                     id = deviceId,
-                    publicKey = deviceId, // Placeholder
-                    signature = "none", // Placeholder - may need real crypto
+                    publicKey = "", // Empty when dangerouslyDisableDeviceAuth is enabled
+                    signature = "", // Empty when dangerouslyDisableDeviceAuth is enabled
                     signedAt = timestamp,
-                    nonce = nonce ?? "0"
+                    nonce = nonce ?? ""
                 }
             }
         };
 
         var json = JsonSerializer.Serialize(request, JsonOptions);
+        Log($"Sending connect request: {json.Substring(0, Math.Min(500, json.Length))}...");
         var bytes = Encoding.UTF8.GetBytes(json);
         
         await ws.SendAsync(bytes, WebSocketMessageType.Text, true, ct);
 
         // Wait for response
         var responseMsg = await ReceiveMessageAsync(ws, ct);
+        Log($"Received response: {responseMsg ?? "(null)"}");
         
         if (responseMsg != null)
         {
             var response = JsonSerializer.Deserialize<GatewayResponse>(responseMsg, JsonOptions);
             if (response?.Type == "res" && response.Id == requestId)
             {
-                return new ConnectResult
+                if (response.Ok && response.Payload.HasValue)
                 {
-                    Ok = response.Ok,
-                    Version = response.Payload?.GetProperty("protocol").GetInt32().ToString(),
-                    Error = response.Error?.ToString()
-                };
+                    string? version = null;
+                    if (response.Payload.Value.TryGetProperty("protocol", out var protocolProp))
+                    {
+                        version = protocolProp.GetInt32().ToString();
+                    }
+                    return new ConnectResult
+                    {
+                        Ok = true,
+                        Version = version
+                    };
+                }
+                else
+                {
+                    // Extract error message
+                    string? errorMsg = null;
+                    if (response.Error.HasValue)
+                    {
+                        if (response.Error.Value.ValueKind == JsonValueKind.String)
+                        {
+                            errorMsg = response.Error.Value.GetString();
+                        }
+                        else if (response.Error.Value.TryGetProperty("message", out var msgProp))
+                        {
+                            errorMsg = msgProp.GetString();
+                        }
+                        else
+                        {
+                            errorMsg = response.Error.Value.GetRawText();
+                        }
+                    }
+                    return new ConnectResult
+                    {
+                        Ok = false,
+                        Error = errorMsg ?? "Connection rejected"
+                    };
+                }
             }
         }
 
-        return new ConnectResult { Ok = false, Error = "No response" };
+        return new ConnectResult { Ok = false, Error = "No response from gateway" };
     }
 
     private async Task ReceiveLoopAsync(CancellationToken ct)
