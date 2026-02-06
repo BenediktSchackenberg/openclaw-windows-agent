@@ -194,6 +194,26 @@ public class NodeWorker : BackgroundService
                 return;
 
             var type = typeProp.GetString();
+            
+            // Log all non-tick/health messages
+            if (type == "event")
+            {
+                if (root.TryGetProperty("event", out var evtName))
+                {
+                    var eventName = evtName.GetString();
+                    if (eventName != "tick" && eventName != "health")
+                    {
+                        _logger.LogInformation("Event received: {Event}", eventName);
+                    }
+                }
+            }
+            else if (type == "req")
+            {
+                if (root.TryGetProperty("method", out var methodProp))
+                {
+                    _logger.LogInformation("Request received: {Method}", methodProp.GetString());
+                }
+            }
 
             switch (type)
             {
