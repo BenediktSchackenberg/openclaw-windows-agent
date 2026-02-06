@@ -44,7 +44,16 @@ public class GatewayService : IDisposable
         {
             using var ws = new ClientWebSocket();
             var wsUrl = GetWebSocketUrl(gateway.Url);
-            Log($"Testing connection to {wsUrl}");
+            
+            // Set Origin header to match gateway URL (required for allowedOrigins check)
+            var originUrl = gateway.Url.TrimEnd('/');
+            if (originUrl.StartsWith("ws://"))
+                originUrl = "http://" + originUrl.Substring(5);
+            else if (originUrl.StartsWith("wss://"))
+                originUrl = "https://" + originUrl.Substring(6);
+            ws.Options.SetRequestHeader("Origin", originUrl);
+            
+            Log($"Testing connection to {wsUrl} (Origin: {originUrl})");
             var startTime = DateTime.Now;
             
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
@@ -131,9 +140,17 @@ public class GatewayService : IDisposable
 
         _currentGateway = gateway;
         _webSocket = new ClientWebSocket();
-
+        
+        // Set Origin header to match gateway URL (required for allowedOrigins check)
         var wsUrl = GetWebSocketUrl(gateway.Url);
-        Log($"Connecting to WebSocket: {wsUrl}");
+        var originUrl = gateway.Url.TrimEnd('/');
+        if (originUrl.StartsWith("ws://"))
+            originUrl = "http://" + originUrl.Substring(5);
+        else if (originUrl.StartsWith("wss://"))
+            originUrl = "https://" + originUrl.Substring(6);
+        _webSocket.Options.SetRequestHeader("Origin", originUrl);
+        
+        Log($"Connecting to WebSocket: {wsUrl} (Origin: {originUrl})");
         
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         await _webSocket.ConnectAsync(new Uri(wsUrl), cts.Token);
