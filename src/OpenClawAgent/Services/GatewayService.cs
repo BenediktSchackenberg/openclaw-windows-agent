@@ -283,10 +283,10 @@ public class GatewayService : IDisposable
                 device = new
                 {
                     id = deviceId,
-                    publicKey = "", // Empty when dangerouslyDisableDeviceAuth is enabled
-                    signature = "", // Empty when dangerouslyDisableDeviceAuth is enabled
+                    publicKey = deviceId, // Use deviceId as placeholder (min 1 char required)
+                    signature = "insecure", // Placeholder for dangerouslyDisableDeviceAuth mode
                     signedAt = timestamp,
-                    nonce = nonce ?? ""
+                    nonce = nonce ?? "0" // Must have value
                 }
             }
         };
