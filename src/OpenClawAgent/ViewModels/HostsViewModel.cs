@@ -110,51 +110,49 @@ public partial class HostsViewModel : ObservableObject
 
     private void RefreshServiceStatus()
     {
-        // Must run on UI thread for property updates
-        System.Windows.Application.Current?.Dispatcher?.Invoke(() =>
+        // Run status check on background thread, then update UI
+        Task.Run(() =>
         {
+            bool isInstalled = false;
+            bool isRunning = false;
+            string statusText = "Unknown";
+
             try
             {
-                IsServiceInstalled = Services.ServiceController.IsInstalled;
-                var status = Services.ServiceController.Status;
+                isInstalled = Services.ServiceController.IsInstalled;
                 
-                if (!IsServiceInstalled)
+                if (isInstalled)
                 {
-                    ServiceStatus = "Not installed";
-                    IsServiceRunning = false;
-                }
-                else if (status == ServiceControllerStatus.Running)
-                {
-                    ServiceStatus = "Running";
-                    IsServiceRunning = true;
-                }
-                else if (status == ServiceControllerStatus.Stopped)
-                {
-                    ServiceStatus = "Stopped";
-                    IsServiceRunning = false;
-                }
-                else if (status == ServiceControllerStatus.StartPending)
-                {
-                    ServiceStatus = "Starting...";
-                    IsServiceRunning = false;
-                }
-                else if (status == ServiceControllerStatus.StopPending)
-                {
-                    ServiceStatus = "Stopping...";
-                    IsServiceRunning = true;
+                    var status = Services.ServiceController.Status;
+                    isRunning = status == ServiceControllerStatus.Running;
+                    
+                    statusText = status switch
+                    {
+                        ServiceControllerStatus.Running => "Running",
+                        ServiceControllerStatus.Stopped => "Stopped",
+                        ServiceControllerStatus.StartPending => "Starting...",
+                        ServiceControllerStatus.StopPending => "Stopping...",
+                        ServiceControllerStatus.Paused => "Paused",
+                        _ => status?.ToString() ?? "Unknown"
+                    };
                 }
                 else
                 {
-                    ServiceStatus = status?.ToString() ?? "Unknown";
-                    IsServiceRunning = false;
+                    statusText = "Not installed";
                 }
             }
             catch (Exception ex)
             {
-                IsServiceInstalled = false;
-                IsServiceRunning = false;
-                ServiceStatus = $"Error: {ex.Message}";
+                statusText = $"Error: {ex.Message}";
             }
+
+            // Update UI on dispatcher thread
+            System.Windows.Application.Current?.Dispatcher?.BeginInvoke(() =>
+            {
+                IsServiceInstalled = isInstalled;
+                IsServiceRunning = isRunning;
+                ServiceStatus = statusText;
+            });
         });
     }
 
