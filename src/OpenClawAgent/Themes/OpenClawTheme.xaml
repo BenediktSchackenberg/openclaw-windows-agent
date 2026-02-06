@@ -161,7 +161,23 @@
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="12,8"/>
         <Setter Property="FontFamily" Value="{StaticResource PrimaryFont}"/>
-        <Setter Property="CaretBrush" Value="{StaticResource PrimaryBrush}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="PasswordBox">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="6">
+                        <ScrollViewer x:Name="PART_ContentHost" Padding="{TemplateBinding Padding}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsFocused" Value="True">
+                            <Setter Property="BorderBrush" Value="{StaticResource PrimaryBrush}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- ListBox Style -->
@@ -171,7 +187,7 @@
     </Style>
 
     <!-- ComboBox Style -->
-    <Style TargetType="ComboBox">
+    <Style x:Key="OpenClawComboBoxStyle" TargetType="ComboBox">
         <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
         <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
@@ -180,12 +196,12 @@
     </Style>
 
     <!-- CheckBox Style -->
-    <Style TargetType="CheckBox">
+    <Style x:Key="OpenClawCheckBoxStyle" TargetType="CheckBox">
         <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
     </Style>
 
     <!-- Separator Style -->
-    <Style TargetType="Separator">
+    <Style x:Key="OpenClawSeparatorStyle" TargetType="Separator">
         <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
         <Setter Property="Height" Value="1"/>
     </Style>
