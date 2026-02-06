@@ -29,7 +29,11 @@ public sealed class NodeManager : INotifyPropertyChanged
     {
         _service = new NodeService();
         _service.ConnectionStateChanged += OnConnectionStateChanged;
-        _service.DebugMessage += (s, msg) => DebugLog?.Invoke(this, msg);
+        _service.DebugMessage += (s, msg) => 
+        {
+            Console.WriteLine(msg);
+            DebugLog?.Invoke(this, msg);
+        };
     }
 
     public NodeService Service => _service;

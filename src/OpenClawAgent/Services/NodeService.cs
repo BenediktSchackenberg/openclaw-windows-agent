@@ -242,6 +242,8 @@ public class NodeService : IDisposable
         var buffer = new byte[8192];
         var messageBuilder = new StringBuilder();
 
+        Log("Receive loop started");
+
         while (!ct.IsCancellationRequested && _webSocket?.State == WebSocketState.Open)
         {
             try
@@ -250,6 +252,7 @@ public class NodeService : IDisposable
                 
                 if (result.MessageType == WebSocketMessageType.Close)
                 {
+                    Log("WebSocket closed by server");
                     ConnectionStateChanged?.Invoke(this, false);
                     break;
                 }
@@ -261,11 +264,13 @@ public class NodeService : IDisposable
                     var message = messageBuilder.ToString();
                     messageBuilder.Clear();
                     
+                    Log($"Received: {message.Substring(0, Math.Min(200, message.Length))}...");
                     await HandleMessageAsync(message);
                 }
             }
             catch (OperationCanceledException)
             {
+                Log("Receive loop cancelled");
                 break;
             }
             catch (Exception ex)
