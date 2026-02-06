@@ -203,7 +203,10 @@ public class GatewayService : IDisposable
     {
         var requestId = Interlocked.Increment(ref _requestId).ToString();
         var deviceId = $"win-{Environment.MachineName.GetHashCode():X8}";
+        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         
+        // Use 'cli' as client.id since that's a known/allowed value
+        // Generate a dummy signature for now (gateway may require proper crypto later)
         var request = new
         {
             type = "req",
@@ -215,22 +218,26 @@ public class GatewayService : IDisposable
                 maxProtocol = 3,
                 client = new
                 {
-                    id = "openclaw-windows-agent",
+                    id = "cli",
                     version = "0.2.0",
                     platform = "windows",
                     mode = "operator"
                 },
                 role = "operator",
-                scopes = new[] { "operator.read" },
+                scopes = new[] { "operator.read", "operator.write" },
                 caps = Array.Empty<string>(),
                 commands = Array.Empty<string>(),
                 permissions = new { },
                 auth = new { token = token ?? "" },
                 locale = "en-US",
-                userAgent = "openclaw-windows-agent/0.2.0",
+                userAgent = "openclaw-cli/0.2.0 (Windows)",
                 device = new
                 {
-                    id = deviceId
+                    id = deviceId,
+                    publicKey = deviceId, // Placeholder
+                    signature = "none", // Placeholder - may need real crypto
+                    signedAt = timestamp,
+                    nonce = nonce ?? "0"
                 }
             }
         };
