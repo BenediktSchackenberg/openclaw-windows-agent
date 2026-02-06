@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using OpenClawAgent.Models;
 using System.Collections.ObjectModel;
 
 namespace OpenClawAgent.ViewModels;
@@ -19,7 +20,7 @@ public partial class LogsViewModel : ObservableObject
     private string _filterText = "";
 
     [ObservableProperty]
-    private LogLevel _filterLevel = LogLevel.All;
+    private string _filterLevel = "all";
 
     [ObservableProperty]
     private bool _autoScroll = true;
@@ -30,17 +31,18 @@ public partial class LogsViewModel : ObservableObject
     public LogsViewModel()
     {
         // Add sample logs
-        AddLog(LogLevel.Info, "Agent started");
-        AddLog(LogLevel.Info, "Loading configuration...");
-        AddLog(LogLevel.Debug, "Config loaded from %APPDATA%\\OpenClaw\\config.json");
+        AddLog("info", "Agent", "Agent started");
+        AddLog("info", "Config", "Loading configuration...");
+        AddLog("debug", "Config", "Config loaded from %APPDATA%\\OpenClaw\\config.json");
     }
 
-    public void AddLog(LogLevel level, string message)
+    public void AddLog(string level, string source, string message)
     {
         Logs.Add(new LogEntry
         {
             Timestamp = DateTime.Now,
             Level = level,
+            Source = source,
             Message = message
         });
     }
@@ -63,7 +65,7 @@ public partial class LogsViewModel : ObservableObject
 
         if (dialog.ShowDialog() == true)
         {
-            var lines = Logs.Select(l => $"[{l.Timestamp:yyyy-MM-dd HH:mm:ss}] [{l.Level}] {l.Message}");
+            var lines = Logs.Select(l => $"[{l.Timestamp:yyyy-MM-dd HH:mm:ss}] [{l.Level}] {l.Source}: {l.Message}");
             System.IO.File.WriteAllLines(dialog.FileName, lines);
         }
     }
@@ -78,24 +80,7 @@ public partial class LogsViewModel : ObservableObject
     [RelayCommand]
     private void CopyToClipboard()
     {
-        var text = string.Join("\n", Logs.Select(l => $"[{l.Timestamp:HH:mm:ss}] [{l.Level}] {l.Message}"));
+        var text = string.Join("\n", Logs.Select(l => $"[{l.Timestamp:HH:mm:ss}] [{l.Level}] {l.Source}: {l.Message}"));
         System.Windows.Clipboard.SetText(text);
     }
-}
-
-public class LogEntry
-{
-    public DateTime Timestamp { get; set; }
-    public LogLevel Level { get; set; }
-    public string Message { get; set; } = "";
-    public string Source { get; set; } = "Agent";
-}
-
-public enum LogLevel
-{
-    All,
-    Debug,
-    Info,
-    Warning,
-    Error
 }

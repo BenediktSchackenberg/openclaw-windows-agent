@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using OpenClawAgent.Models;
 using OpenClawAgent.Services;
 using System;
 using System.Collections.ObjectModel;
@@ -298,27 +299,4 @@ public partial class DashboardViewModel : ObservableObject, IDisposable
         _gatewayManager.Service.DebugMessage -= OnDebugMessage;
         _gatewayManager.Service.ConnectionStateChanged -= OnConnectionStateChanged;
     }
-}
-
-/// <summary>
-/// Log entry for display in dashboard
-/// </summary>
-public class LogEntry
-{
-    public DateTime Timestamp { get; set; }
-    public string Level { get; set; } = "info";
-    public string Source { get; set; } = "";
-    public string Message { get; set; } = "";
-    
-    public string TimeString => Timestamp.ToString("HH:mm:ss");
-    
-    public string LevelEmoji => Level switch
-    {
-        "success" => "✅",
-        "error" => "❌",
-        "warning" => "⚠️",
-        "event" => "📨",
-        "debug" => "🔧",
-        _ => "ℹ️"
-    };
 }
