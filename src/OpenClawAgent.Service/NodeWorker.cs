@@ -313,26 +313,39 @@ public class NodeWorker : BackgroundService
         string? requestId = null;
         if (payload.TryGetProperty("requestId", out var reqIdProp))
             requestId = reqIdProp.GetString();
+        // Also try "id" as fallback
+        if (requestId == null && payload.TryGetProperty("id", out var idProp))
+            requestId = idProp.GetString();
 
         string? command = null;
         if (payload.TryGetProperty("command", out var cmdProp))
             command = cmdProp.GetString();
 
         _logger.LogInformation("Invoke request: {Command} (requestId: {RequestId})", command, requestId);
+        
+        // Debug: log the full payload structure
+        _logger.LogInformation("Payload: {Payload}", payload.ToString());
 
         object? result = null;
         string? error = null;
 
         try
         {
+            // params might be directly in payload or nested
+            JsonElement paramsElement = payload;
+            if (payload.TryGetProperty("params", out var nestedParams))
+            {
+                paramsElement = nestedParams;
+            }
+
             switch (command)
             {
                 case "system.run":
-                    result = await HandleSystemRunFromPayloadAsync(payload, ct);
+                    result = await HandleSystemRunFromPayloadAsync(paramsElement, ct);
                     break;
                     
                 case "system.which":
-                    result = HandleSystemWhichFromPayload(payload);
+                    result = HandleSystemWhichFromPayload(paramsElement);
                     break;
                     
                 case "node.ping":
@@ -370,14 +383,19 @@ public class NodeWorker : BackgroundService
             _logger.LogInformation("Sending result for {RequestId}: ok={Ok}", requestId, error == null);
             await SendJsonAsync(resultMsg, ct);
         }
+        else
+        {
+            _logger.LogWarning("No requestId found, cannot send result. Result: {Result}, Error: {Error}", 
+                result?.ToString(), error);
+        }
     }
 
     private async Task<object> HandleSystemRunFromPayloadAsync(JsonElement payload, CancellationToken ct)
     {
         var command = new List<string>();
         
-        if (payload.TryGetProperty("params", out var paramsProp) &&
-            paramsProp.TryGetProperty("command", out var cmdProp) &&
+        // Try direct "command" array first
+        if (payload.TryGetProperty("command", out var cmdProp) &&
             cmdProp.ValueKind == JsonValueKind.Array)
         {
             foreach (var item in cmdProp.EnumerateArray())
@@ -425,14 +443,17 @@ public class NodeWorker : BackgroundService
     {
         string? name = null;
         
-        if (payload.TryGetProperty("params", out var paramsProp) &&
-            paramsProp.TryGetProperty("name", out var nameProp))
+        // Try direct "name" property first
+        if (payload.TryGetProperty("name", out var nameProp))
         {
             name = nameProp.GetString();
         }
 
         if (string.IsNullOrEmpty(name))
-            throw new ArgumentException("No name specified");
+        {
+            _logger.LogWarning("system.which payload: {Payload}", payload.ToString());
+            throw new ArgumentException($"No name specified in payload");
+        }
 
         // Search in PATH
         var pathEnv = Environment.GetEnvironmentVariable("PATH") ?? "";
