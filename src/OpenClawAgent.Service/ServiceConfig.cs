@@ -23,6 +23,11 @@ public class ServiceConfig
     public string InventoryApiKey { get; set; } = "openclaw-inventory-dev-key";
     public bool AutoPushInventory { get; set; } = true;
 
+    private static readonly JsonSerializerOptions LoadOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
     public static ServiceConfig Load()
     {
         try
@@ -30,7 +35,13 @@ public class ServiceConfig
             if (File.Exists(ConfigPath))
             {
                 var json = File.ReadAllText(ConfigPath);
-                return JsonSerializer.Deserialize<ServiceConfig>(json) ?? new ServiceConfig();
+                Console.WriteLine($"Loading config from {ConfigPath}: {json}");
+                var config = JsonSerializer.Deserialize<ServiceConfig>(json, LoadOptions);
+                if (config != null)
+                {
+                    Console.WriteLine($"Loaded InventoryApiUrl: {config.InventoryApiUrl}");
+                    return config;
+                }
             }
         }
         catch (Exception ex)
