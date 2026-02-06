@@ -5,284 +5,343 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d">
 
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
-
-        <!-- Header -->
-        <TextBlock Grid.Row="0" Text="Hosts &amp; Node Registration" FontSize="24" FontWeight="Bold" 
-                   Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,20"/>
-
-        <!-- Node Registration Section -->
-        <Border Grid.Row="1" Style="{StaticResource CardStyle}" Margin="0,0,0,20">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-
-                <StackPanel Grid.Column="0">
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                        <TextBlock Text="🖥️ This PC as Node" FontWeight="Bold" FontSize="16"
-                                   Foreground="{StaticResource TextPrimaryBrush}"/>
-                        <Ellipse Width="10" Height="10" Margin="12,0,0,0" VerticalAlignment="Center">
-                            <Ellipse.Style>
-                                <Style TargetType="Ellipse">
-                                    <Setter Property="Fill" Value="{StaticResource TextSecondaryBrush}"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsNodeConnected}" Value="True">
-                                            <Setter Property="Fill" Value="{StaticResource WarningBrush}"/>
-                                        </DataTrigger>
-                                        <MultiDataTrigger>
-                                            <MultiDataTrigger.Conditions>
-                                                <Condition Binding="{Binding IsNodeConnected}" Value="True"/>
-                                                <Condition Binding="{Binding IsNodePaired}" Value="True"/>
-                                            </MultiDataTrigger.Conditions>
-                                            <Setter Property="Fill" Value="{StaticResource SuccessBrush}"/>
-                                        </MultiDataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Ellipse.Style>
-                        </Ellipse>
-                        <TextBlock Margin="6,0,0,0" VerticalAlignment="Center"
-                                   Foreground="{StaticResource TextSecondaryBrush}">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Text" Value="Not registered"/>
-                                    <Style.Triggers>
-                                        <MultiDataTrigger>
-                                            <MultiDataTrigger.Conditions>
-                                                <Condition Binding="{Binding IsNodeConnected}" Value="True"/>
-                                                <Condition Binding="{Binding IsNodePaired}" Value="False"/>
-                                            </MultiDataTrigger.Conditions>
-                                            <Setter Property="Text" Value="Pending approval"/>
-                                        </MultiDataTrigger>
-                                        <MultiDataTrigger>
-                                            <MultiDataTrigger.Conditions>
-                                                <Condition Binding="{Binding IsNodeConnected}" Value="True"/>
-                                                <Condition Binding="{Binding IsNodePaired}" Value="True"/>
-                                            </MultiDataTrigger.Conditions>
-                                            <Setter Property="Text" Value="Registered &amp; Paired"/>
-                                        </MultiDataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                    </StackPanel>
-
-                    <TextBlock Text="{Binding NodeStatus}" Foreground="{StaticResource TextSecondaryBrush}" 
-                               FontSize="12" TextWrapping="Wrap" Margin="0,0,0,8"/>
-
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="Display Name:" Foreground="{StaticResource TextSecondaryBrush}" 
-                                   VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <TextBox Text="{Binding NodeDisplayName, UpdateSourceTrigger=PropertyChanged}" 
-                                 Style="{StaticResource OpenClawTextBoxStyle}" Width="200"
-                                 IsEnabled="{Binding IsNodeConnected, Converter={StaticResource InverseBoolConverter}}"/>
-                    </StackPanel>
-                </StackPanel>
-
-                <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                    <Button Content="📡 Register as Node" Style="{StaticResource PrimaryButtonStyle}" 
-                            Command="{Binding RegisterAsNodeCommand}" Margin="0,0,0,8"
-                            Visibility="{Binding IsNodeConnected, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
-                    <Button Content="🔌 Unregister" Style="{StaticResource SecondaryButtonStyle}" 
-                            Command="{Binding UnregisterNodeCommand}"
-                            Visibility="{Binding IsNodeConnected, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                </StackPanel>
-            </Grid>
-        </Border>
-
-        <!-- Remote Hosts Section Header -->
-        <Grid Grid.Row="2">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <Grid Margin="0,0,16,0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <Grid Grid.Row="0" Margin="0,0,0,12">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+            <!-- Header -->
+            <TextBlock Grid.Row="0" Text="Hosts &amp; Node Service" FontSize="24" FontWeight="Bold" 
+                       Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,20"/>
 
-                <TextBlock Text="Remote Hosts" FontSize="18" FontWeight="SemiBold" 
-                           Foreground="{StaticResource TextPrimaryBrush}"/>
+            <!-- Windows Service Section (PRIMARY) -->
+            <Border Grid.Row="1" Style="{StaticResource CardStyle}" Margin="0,0,0,20" BorderBrush="{StaticResource PrimaryBrush}" BorderThickness="2">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <Button Content="🔄 Refresh" Style="{StaticResource SecondaryButtonStyle}" 
-                            Command="{Binding RefreshStatusCommand}" Margin="0,0,8,0"/>
-                    <Button Content="🚀 Deploy All" Style="{StaticResource PrimaryButtonStyle}" 
-                            Command="{Binding DeployToAllCommand}"
-                            IsEnabled="{Binding IsDeploying, Converter={StaticResource InverseBoolConverter}}"/>
-                </StackPanel>
-            </Grid>
+                    <StackPanel Grid.Column="0">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <TextBlock Text="⚙️ OpenClaw Node Service" FontWeight="Bold" FontSize="16"
+                                       Foreground="{StaticResource TextPrimaryBrush}"/>
+                            <Ellipse Width="10" Height="10" Margin="12,0,0,0" VerticalAlignment="Center">
+                                <Ellipse.Style>
+                                    <Style TargetType="Ellipse">
+                                        <Setter Property="Fill" Value="{StaticResource TextSecondaryBrush}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsServiceRunning}" Value="True">
+                                                <Setter Property="Fill" Value="{StaticResource SuccessBrush}"/>
+                                            </DataTrigger>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsServiceInstalled}" Value="True"/>
+                                                    <Condition Binding="{Binding IsServiceRunning}" Value="False"/>
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Fill" Value="{StaticResource WarningBrush}"/>
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Ellipse.Style>
+                            </Ellipse>
+                            <TextBlock Text="{Binding ServiceStatus}" Margin="6,0,0,0" VerticalAlignment="Center"
+                                       Foreground="{StaticResource TextSecondaryBrush}"/>
+                        </StackPanel>
 
-            <!-- Content -->
-            <Grid Grid.Row="1">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="280"/>
-                </Grid.ColumnDefinitions>
+                        <TextBlock Text="The Windows Service keeps the Node connection active even when this app is closed." 
+                                   Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,12"/>
 
-                <!-- Hosts List -->
-                <Border Grid.Column="0" Background="{StaticResource SurfaceBrush}" CornerRadius="8" Padding="16" Margin="0,0,16,0">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <TextBlock Text="Display Name:" Foreground="{StaticResource TextSecondaryBrush}" 
+                                       VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBox Text="{Binding ServiceDisplayName, UpdateSourceTrigger=PropertyChanged}" 
+                                     Style="{StaticResource OpenClawTextBoxStyle}" Width="200"
+                                     IsEnabled="{Binding IsServiceInstalled, Converter={StaticResource InverseBoolConverter}}"/>
+                        </StackPanel>
 
-                        <!-- Column Headers -->
-                        <Grid Margin="0,0,0,8">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="40"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="100"/>
-                                <ColumnDefinition Width="100"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="1" Text="Hostname" FontWeight="SemiBold" 
-                                       Foreground="{StaticResource TextSecondaryBrush}" FontSize="11"/>
-                            <TextBlock Grid.Column="2" Text="Status" FontWeight="SemiBold" 
-                                       Foreground="{StaticResource TextSecondaryBrush}" FontSize="11"/>
-                            <TextBlock Grid.Column="3" Text="Agent" FontWeight="SemiBold" 
-                                       Foreground="{StaticResource TextSecondaryBrush}" FontSize="11"/>
-                        </Grid>
+                        <TextBlock Text="⚠️ Requires active Gateway connection before installing." 
+                                   Foreground="{StaticResource WarningBrush}" FontSize="11" 
+                                   Visibility="{Binding IsServiceInstalled, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                    </StackPanel>
 
-                        <!-- Host Items -->
-                        <ListBox Grid.Row="1" 
-                                 ItemsSource="{Binding Hosts}" 
-                                 SelectedItem="{Binding SelectedHost}"
-                                 Background="Transparent"
-                                 BorderThickness="0">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <Grid Margin="0,4">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="40"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="100"/>
-                                            <ColumnDefinition Width="100"/>
-                                        </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" MinWidth="150">
+                        <!-- Not Installed -->
+                        <Button Content="📥 Install Service" Style="{StaticResource PrimaryButtonStyle}" 
+                                Command="{Binding InstallServiceCommand}" Margin="0,0,0,8"
+                                Visibility="{Binding IsServiceInstalled, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                        
+                        <!-- Installed but stopped -->
+                        <StackPanel Visibility="{Binding IsServiceInstalled, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <Button Content="▶️ Start" Style="{StaticResource PrimaryButtonStyle}" 
+                                    Command="{Binding StartServiceCommand}" Margin="0,0,0,8"
+                                    Visibility="{Binding IsServiceRunning, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                            
+                            <Button Content="⏹️ Stop" Style="{StaticResource SecondaryButtonStyle}" 
+                                    Command="{Binding StopServiceCommand}" Margin="0,0,0,8"
+                                    Visibility="{Binding IsServiceRunning, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                            
+                            <Button Content="🔄 Restart" Style="{StaticResource SecondaryButtonStyle}" 
+                                    Command="{Binding RestartServiceCommand}" Margin="0,0,0,8"
+                                    Visibility="{Binding IsServiceRunning, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                            
+                            <Button Content="🗑️ Uninstall" Style="{StaticResource DangerButtonStyle}" 
+                                    Command="{Binding UninstallServiceCommand}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+            </Border>
 
-                                        <!-- Status Icon -->
-                                        <TextBlock Grid.Column="0" FontSize="16" VerticalAlignment="Center">
-                                            <TextBlock.Style>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="Text" Value="⚪"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding Status}" Value="Online">
-                                                            <Setter Property="Text" Value="🟢"/>
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding Status}" Value="Offline">
-                                                            <Setter Property="Text" Value="🔴"/>
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding Status}" Value="Testing">
-                                                            <Setter Property="Text" Value="🟡"/>
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding Status}" Value="Deployed">
-                                                            <Setter Property="Text" Value="✅"/>
-                                                        </DataTrigger>
-                                                        <DataTrigger Binding="{Binding Status}" Value="Error">
-                                                            <Setter Property="Text" Value="❌"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </TextBlock.Style>
-                                        </TextBlock>
+            <!-- Legacy Node Registration Section (for testing) -->
+            <Border Grid.Row="2" Style="{StaticResource CardStyle}" Margin="0,0,0,20" Opacity="0.7">
+                <Expander Header="🔧 Manual Node Registration (for testing)" Foreground="{StaticResource TextSecondaryBrush}">
+                    <Grid Margin="0,12,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
 
-                                        <!-- Hostname -->
-                                        <StackPanel Grid.Column="1">
-                                            <TextBlock Text="{Binding Hostname}" FontWeight="SemiBold" 
-                                                       Foreground="{StaticResource TextPrimaryBrush}"/>
-                                            <TextBlock Text="{Binding Username, StringFormat='User: {0}'}" FontSize="11" 
-                                                       Foreground="{StaticResource TextSecondaryBrush}"/>
-                                        </StackPanel>
+                        <StackPanel Grid.Column="0">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <TextBlock Text="🖥️ This PC as Node" FontWeight="Bold" FontSize="14"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <Ellipse Width="8" Height="8" Margin="10,0,0,0" VerticalAlignment="Center">
+                                    <Ellipse.Style>
+                                        <Style TargetType="Ellipse">
+                                            <Setter Property="Fill" Value="{StaticResource TextSecondaryBrush}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsNodeConnected}" Value="True">
+                                                    <Setter Property="Fill" Value="{StaticResource WarningBrush}"/>
+                                                </DataTrigger>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding IsNodeConnected}" Value="True"/>
+                                                        <Condition Binding="{Binding IsNodePaired}" Value="True"/>
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Fill" Value="{StaticResource SuccessBrush}"/>
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Ellipse.Style>
+                                </Ellipse>
+                            </StackPanel>
 
-                                        <!-- Status -->
-                                        <TextBlock Grid.Column="2" Text="{Binding Status}" 
-                                                   Foreground="{StaticResource TextSecondaryBrush}"
-                                                   VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding NodeStatus}" Foreground="{StaticResource TextSecondaryBrush}" 
+                                       FontSize="11" TextWrapping="Wrap" Margin="0,0,0,8"/>
 
-                                        <!-- Agent Version -->
-                                        <TextBlock Grid.Column="3" Text="{Binding AgentVersion, TargetNullValue='-'}" 
-                                                   Foreground="{StaticResource TextSecondaryBrush}"
-                                                   VerticalAlignment="Center"/>
-                                    </Grid>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Display Name:" Foreground="{StaticResource TextSecondaryBrush}" 
+                                           VerticalAlignment="Center" Margin="0,0,8,0" FontSize="12"/>
+                                <TextBox Text="{Binding NodeDisplayName, UpdateSourceTrigger=PropertyChanged}" 
+                                         Style="{StaticResource OpenClawTextBoxStyle}" Width="180"
+                                         IsEnabled="{Binding IsNodeConnected, Converter={StaticResource InverseBoolConverter}}"/>
+                            </StackPanel>
+                        </StackPanel>
 
-                        <!-- Empty State -->
-                        <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                    Visibility="{Binding Hosts.Count, Converter={StaticResource ZeroToVisibilityConverter}}">
-                            <TextBlock Text="🖥️" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,12"/>
-                            <TextBlock Text="No remote hosts configured" 
-                                       Foreground="{StaticResource TextSecondaryBrush}"
-                                       HorizontalAlignment="Center"/>
-                            <TextBlock Text="Add a host to deploy the OpenClaw agent" 
-                                       Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
-                                       HorizontalAlignment="Center"/>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <Button Content="📡 Register" Style="{StaticResource SecondaryButtonStyle}" 
+                                    Command="{Binding RegisterAsNodeCommand}" Margin="0,0,0,8" Padding="16,6"
+                                    Visibility="{Binding IsNodeConnected, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                            <Button Content="🔌 Unregister" Style="{StaticResource SecondaryButtonStyle}" 
+                                    Command="{Binding UnregisterNodeCommand}" Padding="16,6"
+                                    Visibility="{Binding IsNodeConnected, Converter={StaticResource BoolToVisibilityConverter}}"/>
                         </StackPanel>
                     </Grid>
-                </Border>
+                </Expander>
+            </Border>
 
-                <!-- Add Host Panel -->
-                <Border Grid.Column="1" Style="{StaticResource CardStyle}">
-                    <StackPanel>
-                        <TextBlock Text="Add Host" FontWeight="Bold" 
-                                   Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,16"/>
+            <!-- Remote Hosts Section -->
+            <Grid Grid.Row="3">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
 
-                        <TextBlock Text="Hostname / IP" Foreground="{StaticResource TextSecondaryBrush}" 
-                                   FontSize="12" Margin="0,0,0,4"/>
-                        <TextBox Text="{Binding NewHostname, UpdateSourceTrigger=PropertyChanged}" 
-                                 Style="{StaticResource OpenClawTextBoxStyle}" Margin="0,0,0,12"/>
+                <Grid Grid.Row="0" Margin="0,0,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                        <TextBlock Text="Username" Foreground="{StaticResource TextSecondaryBrush}" 
-                                   FontSize="12" Margin="0,0,0,4"/>
-                        <TextBox Text="{Binding NewUsername, UpdateSourceTrigger=PropertyChanged}" 
-                                 Style="{StaticResource OpenClawTextBoxStyle}" Margin="0,0,0,12"/>
+                    <TextBlock Text="Remote Hosts" FontSize="18" FontWeight="SemiBold" 
+                               Foreground="{StaticResource TextPrimaryBrush}"/>
 
-                        <TextBlock Text="Password" Foreground="{StaticResource TextSecondaryBrush}" 
-                                   FontSize="12" Margin="0,0,0,4"/>
-                        <PasswordBox Style="{StaticResource OpenClawPasswordBoxStyle}" Margin="0,0,0,12"/>
-
-                        <CheckBox Content="Use WinRM" IsChecked="{Binding UseWinRM}" 
-                                  Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,16"/>
-
-                        <Button Content="➕ Add Host" Style="{StaticResource PrimaryButtonStyle}" 
-                                Command="{Binding AddHostCommand}" HorizontalAlignment="Stretch"/>
-
-                        <!-- Selected Host Actions -->
-                        <Separator Margin="0,20" Background="{StaticResource AccentBrush}"/>
-
-                        <TextBlock Text="Selected Host" FontWeight="Bold" 
-                                   Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,12"/>
-
-                        <Button Content="🚀 Deploy Agent" Style="{StaticResource PrimaryButtonStyle}" 
-                                Command="{Binding DeployToHostCommand}" HorizontalAlignment="Stretch" Margin="0,0,0,8"
-                                IsEnabled="{Binding SelectedHost, Converter={StaticResource NullToBoolConverter}}"/>
-
-                        <Button Content="🗑️ Remove" Style="{StaticResource SecondaryButtonStyle}" 
-                                Command="{Binding RemoveHostCommand}" HorizontalAlignment="Stretch"
-                                IsEnabled="{Binding SelectedHost, Converter={StaticResource NullToBoolConverter}}"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <Button Content="🔄 Refresh" Style="{StaticResource SecondaryButtonStyle}" 
+                                Command="{Binding RefreshStatusCommand}" Margin="0,0,8,0"/>
+                        <Button Content="🚀 Deploy All" Style="{StaticResource PrimaryButtonStyle}" 
+                                Command="{Binding DeployToAllCommand}"
+                                IsEnabled="{Binding IsDeploying, Converter={StaticResource InverseBoolConverter}}"/>
                     </StackPanel>
-                </Border>
-            </Grid>
-        </Grid>
+                </Grid>
 
-        <!-- Deployment Status -->
-        <Border Grid.Row="3" Background="{StaticResource SurfaceBrush}" CornerRadius="6" 
-                Padding="12" Margin="0,16,0,0"
-                Visibility="{Binding DeploymentStatus, Converter={StaticResource StringToVisibilityConverter}}">
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Text="📦 " FontSize="14"/>
-                <TextBlock Text="{Binding DeploymentStatus}" Foreground="{StaticResource TextPrimaryBrush}"/>
-            </StackPanel>
-        </Border>
-    </Grid>
+                <!-- Content -->
+                <Grid Grid.Row="1" MinHeight="200">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="280"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Hosts List -->
+                    <Border Grid.Column="0" Background="{StaticResource SurfaceBrush}" CornerRadius="8" Padding="16" Margin="0,0,16,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Column Headers -->
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="40"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="100"/>
+                                    <ColumnDefinition Width="100"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="1" Text="Hostname" FontWeight="SemiBold" 
+                                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="11"/>
+                                <TextBlock Grid.Column="2" Text="Status" FontWeight="SemiBold" 
+                                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="11"/>
+                                <TextBlock Grid.Column="3" Text="Agent" FontWeight="SemiBold" 
+                                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="11"/>
+                            </Grid>
+
+                            <!-- Host Items -->
+                            <ListBox Grid.Row="1" 
+                                     ItemsSource="{Binding Hosts}" 
+                                     SelectedItem="{Binding SelectedHost}"
+                                     Background="Transparent"
+                                     BorderThickness="0">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,4">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="40"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="100"/>
+                                                <ColumnDefinition Width="100"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Status Icon -->
+                                            <TextBlock Grid.Column="0" FontSize="16" VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Text" Value="⚪"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Status}" Value="Online">
+                                                                <Setter Property="Text" Value="🟢"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Status}" Value="Offline">
+                                                                <Setter Property="Text" Value="🔴"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Status}" Value="Testing">
+                                                                <Setter Property="Text" Value="🟡"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Status}" Value="Deployed">
+                                                                <Setter Property="Text" Value="✅"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Status}" Value="Error">
+                                                                <Setter Property="Text" Value="❌"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+
+                                            <!-- Hostname -->
+                                            <StackPanel Grid.Column="1">
+                                                <TextBlock Text="{Binding Hostname}" FontWeight="SemiBold" 
+                                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                                                <TextBlock Text="{Binding Username, StringFormat='User: {0}'}" FontSize="11" 
+                                                           Foreground="{StaticResource TextSecondaryBrush}"/>
+                                            </StackPanel>
+
+                                            <!-- Status -->
+                                            <TextBlock Grid.Column="2" Text="{Binding Status}" 
+                                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                                       VerticalAlignment="Center"/>
+
+                                            <!-- Agent Version -->
+                                            <TextBlock Grid.Column="3" Text="{Binding AgentVersion, TargetNullValue='-'}" 
+                                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                                       VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+
+                            <!-- Empty State -->
+                            <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                        Visibility="{Binding Hosts.Count, Converter={StaticResource ZeroToVisibilityConverter}}">
+                                <TextBlock Text="🖥️" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                                <TextBlock Text="No remote hosts configured" 
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           HorizontalAlignment="Center"/>
+                                <TextBlock Text="Add a host to deploy the OpenClaw agent" 
+                                           Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
+                                           HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Add Host Panel -->
+                    <Border Grid.Column="1" Style="{StaticResource CardStyle}">
+                        <StackPanel>
+                            <TextBlock Text="Add Host" FontWeight="Bold" 
+                                       Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,16"/>
+
+                            <TextBlock Text="Hostname / IP" Foreground="{StaticResource TextSecondaryBrush}" 
+                                       FontSize="12" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding NewHostname, UpdateSourceTrigger=PropertyChanged}" 
+                                     Style="{StaticResource OpenClawTextBoxStyle}" Margin="0,0,0,12"/>
+
+                            <TextBlock Text="Username" Foreground="{StaticResource TextSecondaryBrush}" 
+                                       FontSize="12" Margin="0,0,0,4"/>
+                            <TextBox Text="{Binding NewUsername, UpdateSourceTrigger=PropertyChanged}" 
+                                     Style="{StaticResource OpenClawTextBoxStyle}" Margin="0,0,0,12"/>
+
+                            <TextBlock Text="Password" Foreground="{StaticResource TextSecondaryBrush}" 
+                                       FontSize="12" Margin="0,0,0,4"/>
+                            <PasswordBox Style="{StaticResource OpenClawPasswordBoxStyle}" Margin="0,0,0,12"/>
+
+                            <CheckBox Content="Use WinRM" IsChecked="{Binding UseWinRM}" 
+                                      Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,16"/>
+
+                            <Button Content="➕ Add Host" Style="{StaticResource PrimaryButtonStyle}" 
+                                    Command="{Binding AddHostCommand}" HorizontalAlignment="Stretch"/>
+
+                            <!-- Selected Host Actions -->
+                            <Separator Margin="0,20" Background="{StaticResource AccentBrush}"/>
+
+                            <TextBlock Text="Selected Host" FontWeight="Bold" 
+                                       Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,12"/>
+
+                            <Button Content="🚀 Deploy Agent" Style="{StaticResource PrimaryButtonStyle}" 
+                                    Command="{Binding DeployToHostCommand}" HorizontalAlignment="Stretch" Margin="0,0,0,8"
+                                    IsEnabled="{Binding SelectedHost, Converter={StaticResource NullToBoolConverter}}"/>
+
+                            <Button Content="🗑️ Remove" Style="{StaticResource SecondaryButtonStyle}" 
+                                    Command="{Binding RemoveHostCommand}" HorizontalAlignment="Stretch"
+                                    IsEnabled="{Binding SelectedHost, Converter={StaticResource NullToBoolConverter}}"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Grid>
+
+            <!-- Deployment Status -->
+            <Border Grid.Row="4" Background="{StaticResource SurfaceBrush}" CornerRadius="6" 
+                    Padding="12" Margin="0,16,0,0"
+                    Visibility="{Binding DeploymentStatus, Converter={StaticResource StringToVisibilityConverter}}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="📦 " FontSize="14"/>
+                    <TextBlock Text="{Binding DeploymentStatus}" Foreground="{StaticResource TextPrimaryBrush}"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </ScrollViewer>
 </UserControl>

@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using OpenClawAgent.Models;
 using OpenClawAgent.Services;
 using System.Collections.ObjectModel;
+using System.ServiceProcess;
 
 namespace OpenClawAgent.ViewModels;
 
@@ -27,7 +28,20 @@ public partial class HostsViewModel : ObservableObject
     [ObservableProperty]
     private string _deploymentStatus = "";
 
-    // Node registration
+    // Service Status
+    [ObservableProperty]
+    private bool _isServiceInstalled;
+
+    [ObservableProperty]
+    private bool _isServiceRunning;
+
+    [ObservableProperty]
+    private string _serviceStatus = "Not installed";
+
+    [ObservableProperty]
+    private string _serviceDisplayName = Environment.MachineName;
+
+    // Legacy Node registration (for testing without service)
     [ObservableProperty]
     private bool _isNodeConnected;
 
@@ -55,6 +69,7 @@ public partial class HostsViewModel : ObservableObject
 
     private readonly NodeManager _nodeManager = NodeManager.Instance;
     private readonly GatewayManager _gatewayManager = GatewayManager.Instance;
+    private System.Threading.Timer? _statusTimer;
 
     public HostsViewModel()
     {
@@ -81,13 +96,152 @@ public partial class HostsViewModel : ObservableObject
         NodeStatus = _nodeManager.StatusMessage;
         NodeDisplayName = _nodeManager.DisplayName;
 
+        // Check service status periodically
+        RefreshServiceStatus();
+        _statusTimer = new System.Threading.Timer(_ => RefreshServiceStatus(), null, 5000, 5000);
+
         LoadHosts();
+    }
+
+    private void RefreshServiceStatus()
+    {
+        try
+        {
+            IsServiceInstalled = Services.ServiceController.IsInstalled;
+            var status = Services.ServiceController.Status;
+            
+            if (!IsServiceInstalled)
+            {
+                ServiceStatus = "Not installed";
+                IsServiceRunning = false;
+            }
+            else if (status == ServiceControllerStatus.Running)
+            {
+                ServiceStatus = "Running";
+                IsServiceRunning = true;
+            }
+            else if (status == ServiceControllerStatus.Stopped)
+            {
+                ServiceStatus = "Stopped";
+                IsServiceRunning = false;
+            }
+            else if (status == ServiceControllerStatus.StartPending)
+            {
+                ServiceStatus = "Starting...";
+                IsServiceRunning = false;
+            }
+            else if (status == ServiceControllerStatus.StopPending)
+            {
+                ServiceStatus = "Stopping...";
+                IsServiceRunning = true;
+            }
+            else
+            {
+                ServiceStatus = status?.ToString() ?? "Unknown";
+                IsServiceRunning = false;
+            }
+        }
+        catch
+        {
+            IsServiceInstalled = false;
+            IsServiceRunning = false;
+            ServiceStatus = "Error checking status";
+        }
     }
 
     private void LoadHosts()
     {
         // TODO: Load from storage
     }
+
+    // ===== SERVICE COMMANDS =====
+
+    [RelayCommand]
+    private async Task InstallServiceAsync()
+    {
+        ServiceStatus = "Installing...";
+        
+        // First, save config for the service
+        SaveServiceConfig();
+        
+        var (success, message) = await Services.ServiceController.InstallAsync();
+        
+        if (success)
+        {
+            ServiceStatus = "Installed - Starting...";
+            await StartServiceAsync();
+        }
+        else
+        {
+            ServiceStatus = $"Install failed: {message}";
+        }
+        
+        RefreshServiceStatus();
+    }
+
+    [RelayCommand]
+    private async Task UninstallServiceAsync()
+    {
+        ServiceStatus = "Uninstalling...";
+        var (success, message) = await Services.ServiceController.UninstallAsync();
+        ServiceStatus = success ? "Uninstalled" : $"Failed: {message}";
+        RefreshServiceStatus();
+    }
+
+    [RelayCommand]
+    private async Task StartServiceAsync()
+    {
+        ServiceStatus = "Starting...";
+        var (success, message) = await Services.ServiceController.StartAsync();
+        ServiceStatus = success ? "Running" : $"Failed: {message}";
+        RefreshServiceStatus();
+    }
+
+    [RelayCommand]
+    private async Task StopServiceAsync()
+    {
+        ServiceStatus = "Stopping...";
+        var (success, message) = await Services.ServiceController.StopAsync();
+        ServiceStatus = success ? "Stopped" : $"Failed: {message}";
+        RefreshServiceStatus();
+    }
+
+    [RelayCommand]
+    private async Task RestartServiceAsync()
+    {
+        ServiceStatus = "Restarting...";
+        var (success, message) = await Services.ServiceController.RestartAsync();
+        ServiceStatus = success ? "Running" : $"Failed: {message}";
+        RefreshServiceStatus();
+    }
+
+    private void SaveServiceConfig()
+    {
+        // Get gateway config and save for service
+        var gateway = _gatewayManager.ActiveGateway;
+        if (gateway == null) return;
+
+        var configDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+            "OpenClaw");
+        
+        Directory.CreateDirectory(configDir);
+        
+        var config = new
+        {
+            GatewayUrl = gateway.Url,
+            GatewayToken = gateway.Token,
+            DisplayName = ServiceDisplayName,
+            AutoStart = true
+        };
+
+        var json = System.Text.Json.JsonSerializer.Serialize(config, 
+            new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        
+        File.WriteAllText(Path.Combine(configDir, "service-config.json"), json);
+    }
+
+    // ===== LEGACY NODE REGISTRATION (for testing) =====
 
     [RelayCommand]
     private async Task RegisterAsNodeAsync()
@@ -116,6 +270,8 @@ public partial class HostsViewModel : ObservableObject
     {
         await _nodeManager.UnregisterAsync();
     }
+
+    // ===== REMOTE HOSTS =====
 
     [RelayCommand]
     private async Task AddHostAsync()
@@ -213,6 +369,8 @@ public partial class HostsViewModel : ObservableObject
     [RelayCommand]
     private async Task RefreshStatusAsync()
     {
+        RefreshServiceStatus();
+        
         foreach (var host in Hosts)
         {
             host.Status = HostStatus.Testing;
