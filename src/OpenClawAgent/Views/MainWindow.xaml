@@ -68,17 +68,13 @@
                             HorizontalContentAlignment="Left" Margin="0,0,0,4"
                             Command="{Binding NavigateToDashboardCommand}"/>
                     
-                    <Button Content="🔗 Gateways" Style="{StaticResource SecondaryButtonStyle}" 
+                    <Button Content="🔗 Connector" Style="{StaticResource SecondaryButtonStyle}" 
                             HorizontalContentAlignment="Left" Margin="0,0,0,4"
-                            Command="{Binding NavigateToGatewaysCommand}"/>
+                            Command="{Binding NavigateToConnectorCommand}"/>
                     
                     <Button Content="💬 Commands" Style="{StaticResource SecondaryButtonStyle}" 
                             HorizontalContentAlignment="Left" Margin="0,0,0,4"
                             Command="{Binding NavigateToCommandsCommand}"/>
-                    
-                    <Button Content="🖥️ Remote Hosts" Style="{StaticResource SecondaryButtonStyle}" 
-                            HorizontalContentAlignment="Left" Margin="0,0,0,4"
-                            Command="{Binding NavigateToHostsCommand}"/>
                     
                     <Button Content="📋 Logs" Style="{StaticResource SecondaryButtonStyle}" 
                             HorizontalContentAlignment="Left" Margin="0,0,0,4"

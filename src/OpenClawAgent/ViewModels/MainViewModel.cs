@@ -95,21 +95,15 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void NavigateToGateways()
+    private void NavigateToConnector()
     {
-        CurrentView = new Views.GatewaysView { DataContext = new GatewaysViewModel() };
+        CurrentView = new Views.ConnectorView { DataContext = new ConnectorViewModel() };
     }
 
     [RelayCommand]
     private void NavigateToCommands()
     {
         CurrentView = new Views.CommandsView { DataContext = new CommandsViewModel() };
-    }
-
-    [RelayCommand]
-    private void NavigateToHosts()
-    {
-        CurrentView = new Views.HostsView { DataContext = new HostsViewModel() };
     }
 
     [RelayCommand]
