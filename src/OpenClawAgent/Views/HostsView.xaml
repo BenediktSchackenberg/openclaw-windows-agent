@@ -8,183 +8,275 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Grid Grid.Row="0" Margin="0,0,0,20">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
+        <TextBlock Grid.Row="0" Text="Hosts &amp; Node Registration" FontSize="24" FontWeight="Bold" 
+                   Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,20"/>
 
-            <TextBlock Text="Remote Hosts" FontSize="24" FontWeight="Bold" 
-                       Foreground="{StaticResource TextPrimaryBrush}"/>
+        <!-- Node Registration Section -->
+        <Border Grid.Row="1" Style="{StaticResource CardStyle}" Margin="0,0,0,20">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-            <StackPanel Grid.Column="1" Orientation="Horizontal">
-                <Button Content="🔄 Refresh All" Style="{StaticResource SecondaryButtonStyle}" 
-                        Command="{Binding RefreshStatusCommand}" Margin="0,0,8,0"/>
-                <Button Content="🚀 Deploy All" Style="{StaticResource PrimaryButtonStyle}" 
-                        Command="{Binding DeployToAllCommand}"
-                        IsEnabled="{Binding IsDeploying, Converter={StaticResource InverseBoolConverter}}"/>
-            </StackPanel>
-        </Grid>
-
-        <!-- Content -->
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="280"/>
-            </Grid.ColumnDefinitions>
-
-            <!-- Hosts List -->
-            <Border Grid.Column="0" Background="{StaticResource SurfaceBrush}" CornerRadius="8" Padding="16" Margin="0,0,16,0">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-
-                    <!-- Column Headers -->
-                    <Grid Margin="0,0,0,8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="40"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="100"/>
-                            <ColumnDefinition Width="100"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="1" Text="Hostname" FontWeight="SemiBold" 
-                                   Foreground="{StaticResource TextSecondaryBrush}" FontSize="11"/>
-                        <TextBlock Grid.Column="2" Text="Status" FontWeight="SemiBold" 
-                                   Foreground="{StaticResource TextSecondaryBrush}" FontSize="11"/>
-                        <TextBlock Grid.Column="3" Text="Agent" FontWeight="SemiBold" 
-                                   Foreground="{StaticResource TextSecondaryBrush}" FontSize="11"/>
-                    </Grid>
-
-                    <!-- Host Items -->
-                    <ListBox Grid.Row="1" 
-                             ItemsSource="{Binding Hosts}" 
-                             SelectedItem="{Binding SelectedHost}"
-                             Background="Transparent"
-                             BorderThickness="0">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <Grid Margin="0,4">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="40"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="100"/>
-                                        <ColumnDefinition Width="100"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <!-- Status Icon -->
-                                    <TextBlock Grid.Column="0" FontSize="16" VerticalAlignment="Center">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Text" Value="⚪"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Status}" Value="Online">
-                                                        <Setter Property="Text" Value="🟢"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding Status}" Value="Offline">
-                                                        <Setter Property="Text" Value="🔴"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding Status}" Value="Testing">
-                                                        <Setter Property="Text" Value="🟡"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding Status}" Value="Deployed">
-                                                        <Setter Property="Text" Value="✅"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding Status}" Value="Error">
-                                                        <Setter Property="Text" Value="❌"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-
-                                    <!-- Hostname -->
-                                    <StackPanel Grid.Column="1">
-                                        <TextBlock Text="{Binding Hostname}" FontWeight="SemiBold" 
-                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
-                                        <TextBlock Text="{Binding Username, StringFormat='User: {0}'}" FontSize="11" 
-                                                   Foreground="{StaticResource TextSecondaryBrush}"/>
-                                    </StackPanel>
-
-                                    <!-- Status -->
-                                    <TextBlock Grid.Column="2" Text="{Binding Status}" 
-                                               Foreground="{StaticResource TextSecondaryBrush}"
-                                               VerticalAlignment="Center"/>
-
-                                    <!-- Agent Version -->
-                                    <TextBlock Grid.Column="3" Text="{Binding AgentVersion, TargetNullValue='-'}" 
-                                               Foreground="{StaticResource TextSecondaryBrush}"
-                                               VerticalAlignment="Center"/>
-                                </Grid>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-
-                    <!-- Empty State -->
-                    <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                Visibility="{Binding Hosts.Count, Converter={StaticResource ZeroToVisibilityConverter}}">
-                        <TextBlock Text="🖥️" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,12"/>
-                        <TextBlock Text="No remote hosts configured" 
-                                   Foreground="{StaticResource TextSecondaryBrush}"
-                                   HorizontalAlignment="Center"/>
-                        <TextBlock Text="Add a host to deploy the OpenClaw agent" 
-                                   Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
-                                   HorizontalAlignment="Center"/>
+                <StackPanel Grid.Column="0">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <TextBlock Text="🖥️ This PC as Node" FontWeight="Bold" FontSize="16"
+                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                        <Ellipse Width="10" Height="10" Margin="12,0,0,0" VerticalAlignment="Center">
+                            <Ellipse.Style>
+                                <Style TargetType="Ellipse">
+                                    <Setter Property="Fill" Value="{StaticResource TextSecondaryBrush}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsNodeConnected}" Value="True">
+                                            <Setter Property="Fill" Value="{StaticResource WarningBrush}"/>
+                                        </DataTrigger>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding IsNodeConnected}" Value="True"/>
+                                                <Condition Binding="{Binding IsNodePaired}" Value="True"/>
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="Fill" Value="{StaticResource SuccessBrush}"/>
+                                        </MultiDataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Ellipse.Style>
+                        </Ellipse>
+                        <TextBlock Margin="6,0,0,0" VerticalAlignment="Center"
+                                   Foreground="{StaticResource TextSecondaryBrush}">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Text" Value="Not registered"/>
+                                    <Style.Triggers>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding IsNodeConnected}" Value="True"/>
+                                                <Condition Binding="{Binding IsNodePaired}" Value="False"/>
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="Text" Value="Pending approval"/>
+                                        </MultiDataTrigger>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding IsNodeConnected}" Value="True"/>
+                                                <Condition Binding="{Binding IsNodePaired}" Value="True"/>
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="Text" Value="Registered &amp; Paired"/>
+                                        </MultiDataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
                     </StackPanel>
-                </Grid>
-            </Border>
 
-            <!-- Add Host Panel -->
-            <Border Grid.Column="1" Style="{StaticResource CardStyle}">
-                <StackPanel>
-                    <TextBlock Text="Add Host" FontWeight="Bold" 
-                               Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,16"/>
+                    <TextBlock Text="{Binding NodeStatus}" Foreground="{StaticResource TextSecondaryBrush}" 
+                               FontSize="12" TextWrapping="Wrap" Margin="0,0,0,8"/>
 
-                    <TextBlock Text="Hostname / IP" Foreground="{StaticResource TextSecondaryBrush}" 
-                               FontSize="12" Margin="0,0,0,4"/>
-                    <TextBox Text="{Binding NewHostname, UpdateSourceTrigger=PropertyChanged}" 
-                             Style="{StaticResource OpenClawTextBoxStyle}" Margin="0,0,0,12"/>
-
-                    <TextBlock Text="Username" Foreground="{StaticResource TextSecondaryBrush}" 
-                               FontSize="12" Margin="0,0,0,4"/>
-                    <TextBox Text="{Binding NewUsername, UpdateSourceTrigger=PropertyChanged}" 
-                             Style="{StaticResource OpenClawTextBoxStyle}" Margin="0,0,0,12"/>
-
-                    <TextBlock Text="Password" Foreground="{StaticResource TextSecondaryBrush}" 
-                               FontSize="12" Margin="0,0,0,4"/>
-                    <PasswordBox Style="{StaticResource OpenClawPasswordBoxStyle}" Margin="0,0,0,12"/>
-
-                    <CheckBox Content="Use WinRM" IsChecked="{Binding UseWinRM}" 
-                              Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,16"/>
-
-                    <Button Content="➕ Add Host" Style="{StaticResource PrimaryButtonStyle}" 
-                            Command="{Binding AddHostCommand}" HorizontalAlignment="Stretch"/>
-
-                    <!-- Selected Host Actions -->
-                    <Separator Margin="0,20" Background="{StaticResource AccentBrush}"/>
-
-                    <TextBlock Text="Selected Host" FontWeight="Bold" 
-                               Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,12"/>
-
-                    <Button Content="🚀 Deploy Agent" Style="{StaticResource PrimaryButtonStyle}" 
-                            Command="{Binding DeployToHostCommand}" HorizontalAlignment="Stretch" Margin="0,0,0,8"
-                            IsEnabled="{Binding SelectedHost, Converter={StaticResource NullToBoolConverter}}"/>
-
-                    <Button Content="🗑️ Remove" Style="{StaticResource SecondaryButtonStyle}" 
-                            Command="{Binding RemoveHostCommand}" HorizontalAlignment="Stretch"
-                            IsEnabled="{Binding SelectedHost, Converter={StaticResource NullToBoolConverter}}"/>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Display Name:" Foreground="{StaticResource TextSecondaryBrush}" 
+                                   VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBox Text="{Binding NodeDisplayName, UpdateSourceTrigger=PropertyChanged}" 
+                                 Style="{StaticResource OpenClawTextBoxStyle}" Width="200"
+                                 IsEnabled="{Binding IsNodeConnected, Converter={StaticResource InverseBoolConverter}}"/>
+                    </StackPanel>
                 </StackPanel>
-            </Border>
+
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <Button Content="📡 Register as Node" Style="{StaticResource PrimaryButtonStyle}" 
+                            Command="{Binding RegisterAsNodeAsyncCommand}" Margin="0,0,0,8"
+                            Visibility="{Binding IsNodeConnected, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                    <Button Content="🔌 Unregister" Style="{StaticResource SecondaryButtonStyle}" 
+                            Command="{Binding UnregisterNodeAsyncCommand}"
+                            Visibility="{Binding IsNodeConnected, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Remote Hosts Section Header -->
+        <Grid Grid.Row="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Text="Remote Hosts" FontSize="18" FontWeight="SemiBold" 
+                           Foreground="{StaticResource TextPrimaryBrush}"/>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Content="🔄 Refresh" Style="{StaticResource SecondaryButtonStyle}" 
+                            Command="{Binding RefreshStatusAsyncCommand}" Margin="0,0,8,0"/>
+                    <Button Content="🚀 Deploy All" Style="{StaticResource PrimaryButtonStyle}" 
+                            Command="{Binding DeployToAllAsyncCommand}"
+                            IsEnabled="{Binding IsDeploying, Converter={StaticResource InverseBoolConverter}}"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- Content -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="280"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Hosts List -->
+                <Border Grid.Column="0" Background="{StaticResource SurfaceBrush}" CornerRadius="8" Padding="16" Margin="0,0,16,0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Column Headers -->
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="40"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="100"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="1" Text="Hostname" FontWeight="SemiBold" 
+                                       Foreground="{StaticResource TextSecondaryBrush}" FontSize="11"/>
+                            <TextBlock Grid.Column="2" Text="Status" FontWeight="SemiBold" 
+                                       Foreground="{StaticResource TextSecondaryBrush}" FontSize="11"/>
+                            <TextBlock Grid.Column="3" Text="Agent" FontWeight="SemiBold" 
+                                       Foreground="{StaticResource TextSecondaryBrush}" FontSize="11"/>
+                        </Grid>
+
+                        <!-- Host Items -->
+                        <ListBox Grid.Row="1" 
+                                 ItemsSource="{Binding Hosts}" 
+                                 SelectedItem="{Binding SelectedHost}"
+                                 Background="Transparent"
+                                 BorderThickness="0">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="40"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="100"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Status Icon -->
+                                        <TextBlock Grid.Column="0" FontSize="16" VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Text" Value="⚪"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Status}" Value="Online">
+                                                            <Setter Property="Text" Value="🟢"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Status}" Value="Offline">
+                                                            <Setter Property="Text" Value="🔴"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Status}" Value="Testing">
+                                                            <Setter Property="Text" Value="🟡"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Status}" Value="Deployed">
+                                                            <Setter Property="Text" Value="✅"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Status}" Value="Error">
+                                                            <Setter Property="Text" Value="❌"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+
+                                        <!-- Hostname -->
+                                        <StackPanel Grid.Column="1">
+                                            <TextBlock Text="{Binding Hostname}" FontWeight="SemiBold" 
+                                                       Foreground="{StaticResource TextPrimaryBrush}"/>
+                                            <TextBlock Text="{Binding Username, StringFormat='User: {0}'}" FontSize="11" 
+                                                       Foreground="{StaticResource TextSecondaryBrush}"/>
+                                        </StackPanel>
+
+                                        <!-- Status -->
+                                        <TextBlock Grid.Column="2" Text="{Binding Status}" 
+                                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                                   VerticalAlignment="Center"/>
+
+                                        <!-- Agent Version -->
+                                        <TextBlock Grid.Column="3" Text="{Binding AgentVersion, TargetNullValue='-'}" 
+                                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                                   VerticalAlignment="Center"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                        <!-- Empty State -->
+                        <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                    Visibility="{Binding Hosts.Count, Converter={StaticResource ZeroToVisibilityConverter}}">
+                            <TextBlock Text="🖥️" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                            <TextBlock Text="No remote hosts configured" 
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       HorizontalAlignment="Center"/>
+                            <TextBlock Text="Add a host to deploy the OpenClaw agent" 
+                                       Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"
+                                       HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Add Host Panel -->
+                <Border Grid.Column="1" Style="{StaticResource CardStyle}">
+                    <StackPanel>
+                        <TextBlock Text="Add Host" FontWeight="Bold" 
+                                   Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,16"/>
+
+                        <TextBlock Text="Hostname / IP" Foreground="{StaticResource TextSecondaryBrush}" 
+                                   FontSize="12" Margin="0,0,0,4"/>
+                        <TextBox Text="{Binding NewHostname, UpdateSourceTrigger=PropertyChanged}" 
+                                 Style="{StaticResource OpenClawTextBoxStyle}" Margin="0,0,0,12"/>
+
+                        <TextBlock Text="Username" Foreground="{StaticResource TextSecondaryBrush}" 
+                                   FontSize="12" Margin="0,0,0,4"/>
+                        <TextBox Text="{Binding NewUsername, UpdateSourceTrigger=PropertyChanged}" 
+                                 Style="{StaticResource OpenClawTextBoxStyle}" Margin="0,0,0,12"/>
+
+                        <TextBlock Text="Password" Foreground="{StaticResource TextSecondaryBrush}" 
+                                   FontSize="12" Margin="0,0,0,4"/>
+                        <PasswordBox Style="{StaticResource OpenClawPasswordBoxStyle}" Margin="0,0,0,12"/>
+
+                        <CheckBox Content="Use WinRM" IsChecked="{Binding UseWinRM}" 
+                                  Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,16"/>
+
+                        <Button Content="➕ Add Host" Style="{StaticResource PrimaryButtonStyle}" 
+                                Command="{Binding AddHostAsyncCommand}" HorizontalAlignment="Stretch"/>
+
+                        <!-- Selected Host Actions -->
+                        <Separator Margin="0,20" Background="{StaticResource AccentBrush}"/>
+
+                        <TextBlock Text="Selected Host" FontWeight="Bold" 
+                                   Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,12"/>
+
+                        <Button Content="🚀 Deploy Agent" Style="{StaticResource PrimaryButtonStyle}" 
+                                Command="{Binding DeployToHostAsyncCommand}" HorizontalAlignment="Stretch" Margin="0,0,0,8"
+                                IsEnabled="{Binding SelectedHost, Converter={StaticResource NullToBoolConverter}}"/>
+
+                        <Button Content="🗑️ Remove" Style="{StaticResource SecondaryButtonStyle}" 
+                                Command="{Binding RemoveHostCommand}" HorizontalAlignment="Stretch"
+                                IsEnabled="{Binding SelectedHost, Converter={StaticResource NullToBoolConverter}}"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
         </Grid>
 
         <!-- Deployment Status -->
-        <Border Grid.Row="2" Background="{StaticResource SurfaceBrush}" CornerRadius="6" 
+        <Border Grid.Row="3" Background="{StaticResource SurfaceBrush}" CornerRadius="6" 
                 Padding="12" Margin="0,16,0,0"
                 Visibility="{Binding DeploymentStatus, Converter={StaticResource StringToVisibilityConverter}}">
             <StackPanel Orientation="Horizontal">

@@ -1,17 +1,19 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using OpenClawAgent.Models;
+using OpenClawAgent.Services;
 using System.Collections.ObjectModel;
 
 namespace OpenClawAgent.ViewModels;
 
 /// <summary>
 /// Remote hosts view model - manage and deploy to remote Windows machines
+/// Also handles local node registration with Gateway
 /// </summary>
 public partial class HostsViewModel : ObservableObject
 {
     [ObservableProperty]
-    private string _title = "Remote Hosts";
+    private string _title = "Hosts & Node";
 
     [ObservableProperty]
     private ObservableCollection<RemoteHost> _hosts = new();
@@ -24,6 +26,19 @@ public partial class HostsViewModel : ObservableObject
 
     [ObservableProperty]
     private string _deploymentStatus = "";
+
+    // Node registration
+    [ObservableProperty]
+    private bool _isNodeConnected;
+
+    [ObservableProperty]
+    private bool _isNodePaired;
+
+    [ObservableProperty]
+    private string _nodeStatus = "Not registered";
+
+    [ObservableProperty]
+    private string _nodeDisplayName = Environment.MachineName;
 
     // New host form
     [ObservableProperty]
@@ -38,14 +53,68 @@ public partial class HostsViewModel : ObservableObject
     [ObservableProperty]
     private bool _useWinRM = true;
 
+    private readonly NodeManager _nodeManager = NodeManager.Instance;
+    private readonly GatewayManager _gatewayManager = GatewayManager.Instance;
+
     public HostsViewModel()
     {
+        // Subscribe to NodeManager state
+        _nodeManager.PropertyChanged += (s, e) =>
+        {
+            switch (e.PropertyName)
+            {
+                case nameof(NodeManager.IsConnected):
+                    IsNodeConnected = _nodeManager.IsConnected;
+                    break;
+                case nameof(NodeManager.IsPaired):
+                    IsNodePaired = _nodeManager.IsPaired;
+                    break;
+                case nameof(NodeManager.StatusMessage):
+                    NodeStatus = _nodeManager.StatusMessage;
+                    break;
+            }
+        };
+
+        // Initialize with current state
+        IsNodeConnected = _nodeManager.IsConnected;
+        IsNodePaired = _nodeManager.IsPaired;
+        NodeStatus = _nodeManager.StatusMessage;
+        NodeDisplayName = _nodeManager.DisplayName;
+
         LoadHosts();
     }
 
     private void LoadHosts()
     {
         // TODO: Load from storage
+    }
+
+    [RelayCommand]
+    private async Task RegisterAsNodeAsync()
+    {
+        var gateway = _gatewayManager.ActiveGateway;
+        if (gateway == null)
+        {
+            NodeStatus = "Error: No gateway connected. Connect to a gateway first.";
+            return;
+        }
+
+        _nodeManager.DisplayName = NodeDisplayName;
+
+        try
+        {
+            await _nodeManager.RegisterAsync(gateway);
+        }
+        catch (Exception ex)
+        {
+            NodeStatus = $"Registration failed: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task UnregisterNodeAsync()
+    {
+        await _nodeManager.UnregisterAsync();
     }
 
     [RelayCommand]
