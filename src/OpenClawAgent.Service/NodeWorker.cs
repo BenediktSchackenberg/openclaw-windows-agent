@@ -331,11 +331,23 @@ public class NodeWorker : BackgroundService
 
         try
         {
-            // params might be directly in payload or nested
+            // params might be in "params" object, "paramsJSON" string, or directly in payload
             JsonElement paramsElement = payload;
+            
             if (payload.TryGetProperty("params", out var nestedParams))
             {
                 paramsElement = nestedParams;
+            }
+            else if (payload.TryGetProperty("paramsJSON", out var paramsJsonProp))
+            {
+                // paramsJSON is a JSON string that needs to be parsed
+                var paramsJsonStr = paramsJsonProp.GetString();
+                if (!string.IsNullOrEmpty(paramsJsonStr))
+                {
+                    var parsedParams = JsonDocument.Parse(paramsJsonStr);
+                    paramsElement = parsedParams.RootElement;
+                    _logger.LogInformation("Parsed paramsJSON: {Params}", paramsJsonStr);
+                }
             }
 
             switch (command)
