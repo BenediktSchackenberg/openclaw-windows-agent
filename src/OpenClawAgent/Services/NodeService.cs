@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net.WebSockets;
@@ -154,7 +155,7 @@ public class NodeService : IDisposable
     {
         var requestId = Interlocked.Increment(ref _requestId).ToString();
         
-        // Build connect request with role: node
+        // Build connect request with role: node (following OpenClaw Gateway Protocol v3)
         var request = new
         {
             type = "req",
@@ -166,24 +167,22 @@ public class NodeService : IDisposable
                 maxProtocol = 3,
                 client = new
                 {
-                    id = "openclaw-windows-node",
+                    id = "node-host",
                     version = "0.2.0",
                     platform = "windows",
                     mode = "node"
                 },
                 role = "node",
-                scopes = new[] { "node" },
-                displayName = displayName,
-                capabilities = new
+                scopes = Array.Empty<string>(),
+                caps = new[] { "system" },
+                commands = new[] { "system.run", "system.which" },
+                permissions = new Dictionary<string, bool>
                 {
-                    system = new { run = true, which = true },
-                    // Future: screen, clipboard, etc.
+                    { "system.run", true },
+                    { "system.which", true }
                 },
-                auth = new
-                {
-                    kind = "token",
-                    token = token
-                }
+                auth = new { token = token },
+                userAgent = $"openclaw-windows-agent/0.2.0 ({displayName})"
             }
         };
 
