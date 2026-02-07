@@ -8,11 +8,12 @@ builder.Services.AddWindowsService(options =>
     options.ServiceName = "OpenClaw Node Agent";
 });
 
-// Add our worker
-builder.Services.AddHostedService<NodeWorker>();
-
 // Add configuration
-builder.Services.AddSingleton<ServiceConfig>();
+builder.Services.AddSingleton(ServiceConfig.Load());
+
+// Add our workers
+builder.Services.AddHostedService<NodeWorker>();
+builder.Services.AddHostedService<InventoryScheduler>();
 
 var host = builder.Build();
 host.Run();

@@ -22,6 +22,10 @@ public class ServiceConfig
     public string InventoryApiUrl { get; set; } = "http://localhost:8080";
     public string InventoryApiKey { get; set; } = "openclaw-inventory-dev-key";
     public bool AutoPushInventory { get; set; } = true;
+    
+    // Scheduled Inventory Push settings
+    public bool ScheduledPushEnabled { get; set; } = true;
+    public int ScheduledPushIntervalMinutes { get; set; } = 30;  // Default: every 30 minutes
 
     private static readonly JsonSerializerOptions LoadOptions = new()
     {
