@@ -148,7 +148,7 @@ public class NodeWorker : BackgroundService
                 client = new
                 {
                     id = "node-host",
-                    version = "0.2.0",
+                    version = "0.3.0",
                     platform = "windows",
                     mode = "node"
                 },
@@ -190,7 +190,7 @@ public class NodeWorker : BackgroundService
                     { "inventory.push", true }
                 },
                 auth = new { token = config.GatewayToken },
-                userAgent = $"openclaw-windows-service/0.2.0 ({config.DisplayName})"
+                userAgent = $"openclaw-windows-service/0.3.0 ({config.DisplayName})"
             }
         };
 

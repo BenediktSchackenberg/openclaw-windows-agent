@@ -168,7 +168,7 @@ public class NodeService : IDisposable
                 client = new
                 {
                     id = "node-host",
-                    version = "0.2.0",
+                    version = "0.3.0",
                     platform = "windows",
                     mode = "node"
                 },
@@ -182,7 +182,7 @@ public class NodeService : IDisposable
                     { "system.which", true }
                 },
                 auth = new { token = token },
-                userAgent = $"openclaw-windows-agent/0.2.0 ({displayName})"
+                userAgent = $"openclaw-windows-agent/0.3.0 ({displayName})"
             }
         };
 

@@ -4,13 +4,32 @@ All notable changes to the OpenClaw Windows Agent.
 
 ## [Unreleased]
 
-### Added
-- Segoe Fluent Icons throughout UI (replacing emojis)
-- App icon (openclaw.ico) for EXE and window
-- Windows Update History in HotfixCollector (up to 200 entries)
+---
 
-### Fixed
-- Backend extracts updateHistory from nested hotfixes object
+## [0.3.0] — 2026-02-07
+
+### Added
+- **System Tray Integration** — Minimize to tray, double-click to restore
+  - Right-click context menu (Open, Dashboard, Connector, Status, Exit)
+  - Connection status in tooltip
+  - Balloon tip on first minimize
+- **Auto-Reconnect** — Exponential backoff (1s → 5min)
+  - Resets after 1+ min connected
+  - Graceful cancellation handling
+- **Scheduled Inventory Push** — Automatic push every X minutes
+  - Configurable interval (default: 30 min)
+  - Hot-reload of config changes
+  - Push count tracking
+- **File Logging** — Serilog with daily rolling files
+  - Log path: `C:\ProgramData\OpenClaw\logs\`
+  - 14 days retention, 10 MB max per file
+- **UI Icons** — Segoe Fluent Icons throughout (replacing emojis)
+- **App Icon** — Custom openclaw.ico for EXE and window
+- **Windows Update History** — Extended HotfixCollector
+
+### Changed
+- ShutdownMode changed to OnExplicitShutdown (for tray support)
+- Service config extended with scheduling options
 
 ---
 

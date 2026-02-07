@@ -291,7 +291,7 @@ public class GatewayService : IDisposable
                 client = new
                 {
                     id = "openclaw-control-ui",  // Known client ID for control UIs
-                    version = "0.2.0",
+                    version = "0.3.0",
                     platform = "windows",
                     mode = "ui"  // UI mode for graphical control clients
                 },
@@ -302,7 +302,7 @@ public class GatewayService : IDisposable
                 permissions = new { },
                 auth = new { token = token ?? "" },
                 locale = System.Globalization.CultureInfo.CurrentCulture.Name,
-                userAgent = $"openclaw-windows-agent/0.2.0 ({Environment.OSVersion.Platform})"
+                userAgent = $"openclaw-windows-agent/0.3.0 ({Environment.OSVersion.Platform})"
                 // device omitted - requires gateway.controlUi.allowInsecureAuth: true
             }
         };
