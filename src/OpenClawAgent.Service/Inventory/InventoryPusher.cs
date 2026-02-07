@@ -83,7 +83,8 @@ public static class InventoryPusher
     /// </summary>
     public static async Task<FullPushResult> CollectAndPushAllAsync(ServiceConfig? config = null)
     {
-        config ??= ServiceConfig.Load();
+        // Always reload config to get latest values
+        config = ServiceConfig.Load();
         var results = new FullPushResult();
         
         // Collect full inventory
