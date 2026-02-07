@@ -4,6 +4,7 @@ using System.Drawing;
 using Hardcodet.Wpf.TaskbarNotification;
 using OpenClawAgent.Views;
 using OpenClawAgent.ViewModels;
+using OpenClawAgent.Properties;
 
 namespace OpenClawAgent;
 
@@ -93,15 +94,15 @@ public partial class App : Application
         _mainWindow?.Hide();
 
         // Show balloon tip first time
-        if (_trayIcon != null && !Properties.Settings.Default.TrayHintShown)
+        if (_trayIcon != null && !Settings.Default.TrayHintShown)
         {
             _trayIcon.ShowBalloonTip(
                 "OpenClaw Agent",
                 "Application minimized to system tray. Double-click to open.",
                 BalloonIcon.Info);
             
-            Properties.Settings.Default.TrayHintShown = true;
-            Properties.Settings.Default.Save();
+            Settings.Default.TrayHintShown = true;
+            Settings.Default.Save();
         }
     }
 

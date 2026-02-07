@@ -93,7 +93,7 @@ public class InventoryScheduler : BackgroundService
     /// <summary>
     /// Force an immediate inventory push (can be called externally)
     /// </summary>
-    public async Task<InventoryPushResult> PushNowAsync()
+    public async Task<FullPushResult> PushNowAsync()
     {
         _logger.LogInformation("Manual inventory push requested...");
         
