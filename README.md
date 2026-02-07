@@ -1,248 +1,237 @@
-# OpenClaw Windows Agent 🪟
+# OpenClaw Windows Agent 🪟🐉
 
-> ⚠️ **TESTING / ALPHA** — This project is in early development. Expect bugs, breaking changes, and missing features. Use at your own risk!
+> **Production Ready (v0.3.2)** — Zero-touch installation, hardware/software inventory, remote command execution. Manage your Windows fleet from anywhere.
 
-A native Windows GUI + Background Service for [OpenClaw](https://openclaw.ai) that registers your Windows PC as a Node, allowing remote command execution from the OpenClaw Gateway.
+A native Windows Service + GUI for [OpenClaw](https://openclaw.ai) that turns your Windows PCs into remotely manageable nodes. Talk to your machines via Discord, Telegram, or any AI interface.
 
-![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?style=flat-square&logo=dotnet)
-![Windows](https://img.shields.io/badge/Windows-10%2F11-0078D6?style=flat-square&logo=windows)
-![Status](https://img.shields.io/badge/Status-Alpha%20Testing-orange?style=flat-square)
-![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
+[![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/)
+[![Windows](https://img.shields.io/badge/Windows-10%2F11%2FServer-0078D6?style=flat-square&logo=windows)](https://www.microsoft.com/windows)
+[![Release](https://img.shields.io/github/v/release/BenediktSchackenberg/openclaw-windows-agent?style=flat-square)](https://github.com/BenediktSchackenberg/openclaw-windows-agent/releases)
+[![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 
-## What It Does
+---
 
-The OpenClaw Windows Agent connects your Windows PC to an OpenClaw Gateway, enabling:
+## 🚀 Zero-Touch Installation
 
-- 🖥️ **Remote Command Execution** — Run PowerShell/CMD commands from the Gateway
-- 📁 **File Operations** — Create, read, write files remotely
-- 🚀 **App Launching** — Start applications on your Windows PC
-- 🔗 **Persistent Connection** — Windows Service keeps connection alive 24/7
-- 📊 **Live Monitoring** — Dashboard shows real-time Gateway events and logs
+**One PowerShell command. 30 seconds. Done.**
 
-## Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     YOUR NETWORK                                 │
-│                                                                  │
-│  ┌──────────────┐         WebSocket          ┌───────────────┐  │
-│  │   Linux PC   │ ◄──────────────────────► │  Windows PC   │  │
-│  │              │                            │               │  │
-│  │  OpenClaw    │    "Run notepad.exe"       │  Agent GUI    │  │
-│  │  Gateway     │ ─────────────────────────► │      +        │  │
-│  │              │                            │  Background   │  │
-│  │  (Port 18789)│ ◄───────────────────────── │  Service      │  │
-│  │              │     { "pid": 1234 }        │               │  │
-│  └──────────────┘                            └───────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
+```powershell
+# Run as Administrator
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/BenediktSchackenberg/openclaw-windows-agent/main/installer/Install-OpenClawAgent.ps1" -OutFile "Install.ps1"
+.\Install.ps1 -GatewayUrl "http://YOUR-GATEWAY-IP:18789" -GatewayToken "YOUR-TOKEN"
 ```
 
-**Two Components:**
-1. **OpenClawAgent.exe** — WPF GUI for configuration, monitoring, and service control
-2. **OpenClawAgent.Service.exe** — Windows Service that maintains the Gateway connection 24/7
+The script automatically:
+1. ✅ Downloads agent from GitHub Releases
+2. ✅ Verifies SHA256 hash
+3. ✅ Installs to `C:\Program Files\OpenClaw\Agent`
+4. ✅ Registers Windows Service (auto-start)
+5. ✅ Connects to Gateway
 
-## Features
+**No manual steps. No reboots. No touching keyboards.**
 
-### ✅ Working Now
+---
 
-- 🔗 **Gateway Connection** — WebSocket connection with token auth
-- ⚙️ **Windows Service** — Runs in background, survives reboots
-- 💻 **Remote Commands** — `system.run` and `system.which` 
-- 📊 **Live Dashboard** — Real-time Gateway events with emoji indicators
-- 🔐 **Secure Credentials** — DPAPI encryption for tokens
-- 🎨 **Dark Theme** — Slick OpenClaw-branded UI
-- 🔄 **Auto-Reconnect** — Service reconnects if connection drops
+## ✨ Features
 
-### 🚧 In Progress / Planned
+### 📊 Hardware & Software Inventory
+Automatically collects and reports:
+- **Hardware** — CPU, RAM, GPU, Disks, Mainboard, BIOS/UEFI, TPM
+- **Software** — All installed applications with versions & MSI codes
+- **Windows Updates** — Hotfixes + full Windows Update history
+- **Security** — Firewall status, BitLocker, UAC settings
+- **Network** — Active connections, adapters, IP addresses
+- **Browser Extensions** — Chrome, Edge, Firefox
 
-- 📸 Screenshot capture
-- 📂 File browser/transfer
-- 🖱️ GUI automation (mouse/keyboard)
-- 🔔 System tray notifications
-- 📦 MSI Installer
-- 🔏 Code signing
+### 🖥️ Remote Command Execution
+Run any command on your Windows machines:
+```
+You: "What's the hostname of CONTROLLER?"
+AI: *runs command* → "CONTROLLER"
 
-## Supported Commands
+You: "Open Notepad on my desktop"
+AI: *starts Notepad* → "Started with PID 1234"
+
+You: "Get the top 5 processes by memory"
+AI: *runs Get-Process | Sort WS -Desc | Select -First 5*
+```
+
+### 🔗 Persistent Connection
+- Windows Service runs 24/7 in background
+- Auto-reconnects if connection drops
+- Survives reboots
+- Unique node ID per machine (`win-{hostname}`)
+
+### 🌐 Web Dashboard
+Beautiful Next.js dashboard showing:
+- All connected nodes with status
+- Hardware/Software details per node
+- Groups and tags for organization
+- Windows Update history
+
+---
+
+## 📋 Prerequisites
+
+Before installing the agent, you need:
+
+1. **OpenClaw Gateway** running on Linux (Raspberry Pi, Server, WSL, etc.)
+   ```bash
+   npm install -g openclaw
+   openclaw gateway start
+   ```
+
+2. **Gateway accessible from network**
+   - Set `bind: "lan"` in `~/.openclaw/openclaw.json`
+   - Default port: `18789`
+
+3. **Gateway Token**
+   ```bash
+   grep token ~/.openclaw/openclaw.json
+   ```
+
+📚 Full docs: [docs.openclaw.ai](https://docs.openclaw.ai)
+
+---
+
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                           YOUR NETWORK                                   │
+│                                                                          │
+│  ┌──────────────────┐                        ┌───────────────────────┐  │
+│  │   Linux Server   │      WebSocket         │   Windows Machines    │  │
+│  │                  │ ◄────────────────────► │                       │  │
+│  │  ┌────────────┐  │                        │  ┌─────────────────┐  │  │
+│  │  │  OpenClaw  │  │   Commands/Events      │  │  Agent Service  │  │  │
+│  │  │  Gateway   │  │ ─────────────────────► │  │  (runs 24/7)    │  │  │
+│  │  └────────────┘  │                        │  └─────────────────┘  │  │
+│  │        │         │                        │           │           │  │
+│  │  ┌────────────┐  │                        │  ┌─────────────────┐  │  │
+│  │  │ Inventory  │  │   Inventory Push       │  │   WMI/CIM       │  │  │
+│  │  │ Backend    │ ◄───────────────────────  │  │   Collectors    │  │  │
+│  │  │ (FastAPI)  │  │                        │  └─────────────────┘  │  │
+│  │  └────────────┘  │                        │                       │  │
+│  │        │         │                        │  DESKTOP-PC           │  │
+│  │  ┌────────────┐  │                        │  LAPTOP-01            │  │
+│  │  │ Dashboard  │  │                        │  SERVER-2022          │  │
+│  │  │ (Next.js)  │  │                        │  ...                  │  │
+│  │  └────────────┘  │                        └───────────────────────┘  │
+│  └──────────────────┘                                                    │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🛠️ Supported Commands
 
 | Command | Description | Example |
 |---------|-------------|---------|
-| `system.run` | Execute command, capture output | `{"command": ["powershell", "-Command", "Get-Date"]}` |
-| `system.run` (background) | Start GUI app without waiting | `{"command": ["notepad.exe"], "background": true}` |
-| `system.which` | Find executable in PATH | `{"name": "python"}` |
+| `system.run` | Execute command | `{"command": ["hostname"]}` |
+| `system.run` (background) | Start GUI app | `{"command": ["notepad.exe"], "background": true}` |
+| `system.which` | Find executable | `{"name": "python"}` |
+| `inventory.hardware` | Get hardware info | — |
+| `inventory.software` | Get installed apps | — |
+| `inventory.hotfixes` | Get Windows updates | — |
+| `inventory.security` | Get security status | — |
+| `inventory.network` | Get network info | — |
+| `inventory.browser` | Get browser extensions | — |
+| `inventory.full` | Get everything | — |
+| `inventory.push` | Push to backend | — |
 
-## Requirements
+---
 
-- Windows 10 (1903+) or Windows 11
-- .NET 8.0 Runtime
-- OpenClaw Gateway running somewhere on your network
+## 📦 Project Structure
 
-## Installation
+```
+├── src/
+│   ├── OpenClawAgent/              # WPF GUI Application
+│   │   ├── ViewModels/             # MVVM ViewModels
+│   │   ├── Views/                  # WPF XAML views
+│   │   └── Services/               # Gateway, Node, Credentials
+│   │
+│   └── OpenClawAgent.Service/      # Windows Service
+│       ├── NodeWorker.cs           # WebSocket client
+│       └── Inventory/              # WMI Collectors
+│           ├── HardwareCollector.cs
+│           ├── SoftwareCollector.cs
+│           ├── SecurityCollector.cs
+│           └── ...
+│
+├── backend/                        # FastAPI Inventory Backend
+│   └── main.py                     # REST API for inventory storage
+│
+├── frontend/                       # Next.js Dashboard
+│   └── src/app/                    # React components
+│
+├── installer/
+│   ├── Install-OpenClawAgent.ps1   # Zero-touch installer
+│   ├── Build-Release.ps1           # Release packaging
+│   └── Package.wxs                 # MSI installer (WiX)
+│
+└── docs/
+    └── E10-ZERO-TOUCH-INSTALL.md   # Deployment documentation
+```
 
-### Build from Source
+---
 
-```powershell
-# Clone repository
+## 🔐 Security
+
+- **Tokens stored with DPAPI** — Windows-native encryption
+- **SHA256 hash verification** — Installer validates downloads
+- **Service runs as SYSTEM** — Full local access (intentional)
+- **Enrollment Tokens** — Coming in v0.4.0 for large deployments
+
+⚠️ **Important:** Only connect to Gateways you control. The token grants full access.
+
+---
+
+## 📈 Roadmap
+
+- [x] **v0.1** — Basic GUI + Gateway connection
+- [x] **v0.2** — Windows Service + remote commands
+- [x] **v0.3** — Inventory collection + Zero-touch install
+- [ ] **v0.4** — Enrollment tokens + Job system
+- [ ] **v0.5** — Package management + Software deployment
+- [ ] **v1.0** — Production-ready with RBAC
+
+See full roadmap: [ROADMAP.md](ROADMAP.md)
+
+---
+
+## 🤝 Contributing
+
+Contributions welcome!
+
+```bash
+# Clone
 git clone https://github.com/BenediktSchackenberg/openclaw-windows-agent.git
-cd openclaw-windows-agent
 
-# Build everything
+# Build
 dotnet build
 
-# Run the GUI
+# Run GUI
 dotnet run --project src/OpenClawAgent
 ```
 
-Or open `OpenClawAgent.sln` in Visual Studio and press F5.
+Or open `OpenClawAgent.sln` in Visual Studio.
 
-### Install the Service
+---
 
-1. Open the GUI
-2. Go to **Connector** tab
-3. Add your Gateway (URL + Token)
-4. Click **Connect** to test
-5. Click **Install Service**
-6. Service starts automatically and survives reboots!
-
-## Quick Start
-
-### 1. Configure Gateway Connection
-
-1. Open OpenClawAgent.exe
-2. Go to **Connector** → Add Gateway
-3. Enter:
-   - **Name:** My Gateway
-   - **URL:** `http://192.168.0.5:18789` (your Gateway IP)
-   - **Token:** Your gateway token
-4. Click **Add Gateway** → **Connect**
-
-### 2. Install Background Service
-
-1. Still in **Connector** tab
-2. Click **📥 Install Service**
-3. Accept UAC prompt
-4. Service starts automatically!
-
-### 3. Test from Gateway
-
-From your OpenClaw session, try:
-```
-# Check the node is connected
-nodes status
-
-# Run a command
-nodes invoke --node node-host --command system.which --params '{"name": "powershell"}'
-
-# Create a file
-nodes invoke --node node-host --command system.run --params '{"command": ["powershell", "-Command", "Set-Content -Path C:\\temp\\test.txt -Value Hello"]}'
-```
-
-## Project Structure
-
-```
-src/
-├── OpenClawAgent/              # WPF GUI Application
-│   ├── Models/                 # Data models (GatewayConfig, LogEntry, etc.)
-│   ├── Services/               # Business logic
-│   │   ├── GatewayService.cs   # WebSocket communication
-│   │   ├── GatewayManager.cs   # Connection state management
-│   │   ├── CredentialService.cs # DPAPI encrypted storage
-│   │   ├── NodeService.cs      # Node registration
-│   │   └── ServiceController.cs # Windows Service control
-│   ├── ViewModels/             # MVVM ViewModels
-│   ├── Views/                  # WPF XAML views
-│   └── Themes/                 # OpenClaw dark theme
-│
-└── OpenClawAgent.Service/      # Windows Service
-    ├── NodeWorker.cs           # Main service logic
-    ├── ServiceConfig.cs        # Configuration handling
-    └── Program.cs              # Service entry point
-```
-
-## Configuration
-
-### GUI Settings
-Stored in `%APPDATA%\OpenClaw\`:
-- `gateways.json` — Saved gateways (tokens encrypted with DPAPI)
-
-### Service Settings
-Stored in `%PROGRAMDATA%\OpenClaw\`:
-- `service-config.json` — Gateway URL, token, display name
-
-## Security Notes
-
-⚠️ **The Service runs as SYSTEM** — This means:
-- Commands execute with SYSTEM privileges
-- GUI apps won't be visible (Session 0 isolation)
-- Full access to the local machine
-
-**Recommendations:**
-- Only connect to Gateways you control
-- Use strong, unique tokens
-- Consider firewall rules for the Gateway port
-- For production: implement proper authentication
-
-## Known Limitations
-
-1. **GUI Apps Not Visible** — Service runs as SYSTEM, can't show windows on user desktop
-2. **No Interactive Sessions** — Can't capture user input
-3. **Single Node ID** — Currently hardcoded as `node-host`
-4. **Limited Commands** — Only `system.run` and `system.which` for now
-
-## Troubleshooting
-
-### Service won't start
-```powershell
-# Check service status
-Get-Service OpenClawNodeAgent
-
-# Check Windows Event Log
-Get-EventLog -LogName Application -Source "OpenClawNodeAgent" -Newest 10
-```
-
-### Connection issues
-1. Check Gateway is reachable: `Test-NetConnection 192.168.0.5 -Port 18789`
-2. Verify token is correct
-3. Check Gateway config has `bind: "lan"` (not loopback)
-
-### Commands timeout
-- Check Dashboard for incoming events
-- Restart service: `Restart-Service OpenClawNodeAgent`
-
-## Development
-
-### Tech Stack
-
-- **Framework:** .NET 8.0
-- **GUI:** WPF with MVVM (CommunityToolkit.Mvvm)
-- **Service:** Worker Service template
-- **Protocol:** OpenClaw Gateway Protocol v3 (WebSocket + JSON)
-
-### Building
-
-```powershell
-# Debug build
-dotnet build
-
-# Release build
-dotnet build -c Release
-
-# Publish self-contained
-dotnet publish -c Release -r win-x64 --self-contained -o ./dist
-```
-
-## Contributing
-
-This is an alpha project — contributions welcome!
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a Pull Request
-
-## License
+## 📄 License
 
 MIT — see [LICENSE](LICENSE)
 
 ---
 
-*Part of the [OpenClaw](https://openclaw.ai) ecosystem* 🦀
+## 🔗 Links
+
+- **OpenClaw**: [openclaw.ai](https://openclaw.ai) | [GitHub](https://github.com/openclaw/openclaw)
+- **Docs**: [docs.openclaw.ai](https://docs.openclaw.ai)
+- **Blog Post**: [schackenberg.com/posts/openclaw-windows-agent](https://schackenberg.com/posts/openclaw-windows-agent/)
+- **Discord**: [OpenClaw Community](https://discord.com/invite/clawd)
+
+---
+
+*Built with 🐉 energy by [Benedikt Schackenberg](https://schackenberg.com)*
