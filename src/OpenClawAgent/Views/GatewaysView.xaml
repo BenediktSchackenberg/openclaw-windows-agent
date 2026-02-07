@@ -41,13 +41,48 @@
                              BorderThickness="0">
                         <ListBox.ContextMenu>
                             <ContextMenu>
-                                <MenuItem Header="🔗 Connect" Command="{Binding ConnectCommand}"/>
-                                <MenuItem Header="🧪 Test Connection" Command="{Binding TestConnectionCommand}"/>
-                                <MenuItem Header="🔌 Disconnect" Command="{Binding DisconnectCommand}"/>
+                                <MenuItem Command="{Binding ConnectCommand}">
+                                    <MenuItem.Header>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE703;" FontFamily="{StaticResource IconFont}" FontSize="12" Margin="0,0,8,0"/>
+                                            <TextBlock Text="Connect"/>
+                                        </StackPanel>
+                                    </MenuItem.Header>
+                                </MenuItem>
+                                <MenuItem Command="{Binding TestConnectionCommand}">
+                                    <MenuItem.Header>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE8C8;" FontFamily="{StaticResource IconFont}" FontSize="12" Margin="0,0,8,0"/>
+                                            <TextBlock Text="Test Connection"/>
+                                        </StackPanel>
+                                    </MenuItem.Header>
+                                </MenuItem>
+                                <MenuItem Command="{Binding DisconnectCommand}">
+                                    <MenuItem.Header>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE8CD;" FontFamily="{StaticResource IconFont}" FontSize="12" Margin="0,0,8,0"/>
+                                            <TextBlock Text="Disconnect"/>
+                                        </StackPanel>
+                                    </MenuItem.Header>
+                                </MenuItem>
                                 <Separator/>
-                                <MenuItem Header="⭐ Set as Default" Command="{Binding SetAsDefaultCommand}"/>
+                                <MenuItem Command="{Binding SetAsDefaultCommand}">
+                                    <MenuItem.Header>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE735;" FontFamily="{StaticResource IconFont}" FontSize="12" Margin="0,0,8,0"/>
+                                            <TextBlock Text="Set as Default"/>
+                                        </StackPanel>
+                                    </MenuItem.Header>
+                                </MenuItem>
                                 <Separator/>
-                                <MenuItem Header="🗑️ Delete" Command="{Binding RemoveGatewayCommand}"/>
+                                <MenuItem Command="{Binding RemoveGatewayCommand}">
+                                    <MenuItem.Header>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="&#xE74D;" FontFamily="{StaticResource IconFont}" FontSize="12" Margin="0,0,8,0"/>
+                                            <TextBlock Text="Delete"/>
+                                        </StackPanel>
+                                    </MenuItem.Header>
+                                </MenuItem>
                             </ContextMenu>
                         </ListBox.ContextMenu>
                         <ListBox.ItemTemplate>
@@ -79,7 +114,8 @@
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="{Binding Name}" FontWeight="SemiBold" 
                                                            Foreground="{StaticResource TextPrimaryBrush}"/>
-                                                <TextBlock Text=" ⭐" Foreground="{StaticResource WarningBrush}"
+                                                <TextBlock Text="&#xE735;" FontFamily="{StaticResource IconFont}" FontSize="12"
+                                                           Foreground="{StaticResource WarningBrush}" Margin="6,0,0,0"
                                                            Visibility="{Binding IsDefault, Converter={StaticResource BoolToVisibilityConverter}}"/>
                                             </StackPanel>
                                             <TextBlock Text="{Binding Url}" FontSize="12" 
@@ -127,8 +163,13 @@
                     <PasswordBox x:Name="TokenBox" Style="{StaticResource OpenClawPasswordBoxStyle}" Margin="0,0,0,16"
                                  PasswordChanged="TokenBox_PasswordChanged"/>
 
-                    <Button Content="➕ Add Gateway" Style="{StaticResource PrimaryButtonStyle}" 
-                            Command="{Binding AddGatewayCommand}" HorizontalAlignment="Stretch"/>
+                    <Button Style="{StaticResource PrimaryButtonStyle}" 
+                            Command="{Binding AddGatewayCommand}" HorizontalAlignment="Stretch">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE710;" FontFamily="{StaticResource IconFont}" FontSize="14" Margin="0,0,6,0"/>
+                            <TextBlock Text="Add Gateway"/>
+                        </StackPanel>
+                    </Button>
 
                     <!-- Selected Gateway Actions -->
                     <Separator Margin="0,20" Background="{StaticResource AccentBrush}"/>
@@ -136,25 +177,50 @@
                     <TextBlock Text="Selected Gateway" FontWeight="Bold" 
                                Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,12"/>
 
-                    <Button Content="🔗 Connect" Style="{StaticResource PrimaryButtonStyle}" 
+                    <Button Style="{StaticResource PrimaryButtonStyle}" 
                             Command="{Binding ConnectCommand}" HorizontalAlignment="Stretch" Margin="0,0,0,8"
-                            IsEnabled="{Binding SelectedGateway, Converter={StaticResource NullToBoolConverter}}"/>
+                            IsEnabled="{Binding SelectedGateway, Converter={StaticResource NullToBoolConverter}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE703;" FontFamily="{StaticResource IconFont}" FontSize="14" Margin="0,0,6,0"/>
+                            <TextBlock Text="Connect"/>
+                        </StackPanel>
+                    </Button>
 
-                    <Button Content="🧪 Test Connection" Style="{StaticResource SecondaryButtonStyle}" 
+                    <Button Style="{StaticResource SecondaryButtonStyle}" 
                             Command="{Binding TestConnectionCommand}" HorizontalAlignment="Stretch" Margin="0,0,0,8"
-                            IsEnabled="{Binding SelectedGateway, Converter={StaticResource NullToBoolConverter}}"/>
+                            IsEnabled="{Binding SelectedGateway, Converter={StaticResource NullToBoolConverter}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE8C8;" FontFamily="{StaticResource IconFont}" FontSize="14" Margin="0,0,6,0"/>
+                            <TextBlock Text="Test Connection"/>
+                        </StackPanel>
+                    </Button>
 
-                    <Button Content="🔌 Disconnect" Style="{StaticResource SecondaryButtonStyle}" 
+                    <Button Style="{StaticResource SecondaryButtonStyle}" 
                             Command="{Binding DisconnectCommand}" HorizontalAlignment="Stretch" Margin="0,0,0,8"
-                            IsEnabled="{Binding SelectedGateway.IsConnected}"/>
+                            IsEnabled="{Binding SelectedGateway.IsConnected}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE8CD;" FontFamily="{StaticResource IconFont}" FontSize="14" Margin="0,0,6,0"/>
+                            <TextBlock Text="Disconnect"/>
+                        </StackPanel>
+                    </Button>
 
-                    <Button Content="⭐ Set as Default" Style="{StaticResource SecondaryButtonStyle}" 
+                    <Button Style="{StaticResource SecondaryButtonStyle}" 
                             Command="{Binding SetAsDefaultCommand}" HorizontalAlignment="Stretch" Margin="0,0,0,8"
-                            IsEnabled="{Binding SelectedGateway, Converter={StaticResource NullToBoolConverter}}"/>
+                            IsEnabled="{Binding SelectedGateway, Converter={StaticResource NullToBoolConverter}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE735;" FontFamily="{StaticResource IconFont}" FontSize="14" Margin="0,0,6,0"/>
+                            <TextBlock Text="Set as Default"/>
+                        </StackPanel>
+                    </Button>
 
-                    <Button Content="🗑️ Remove" Style="{StaticResource SecondaryButtonStyle}" 
+                    <Button Style="{StaticResource SecondaryButtonStyle}" 
                             Command="{Binding RemoveGatewayCommand}" HorizontalAlignment="Stretch"
-                            IsEnabled="{Binding SelectedGateway, Converter={StaticResource NullToBoolConverter}}"/>
+                            IsEnabled="{Binding SelectedGateway, Converter={StaticResource NullToBoolConverter}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE74D;" FontFamily="{StaticResource IconFont}" FontSize="14" Margin="0,0,6,0"/>
+                            <TextBlock Text="Remove"/>
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
             </Border>
         </Grid>
@@ -180,7 +246,9 @@
                 </TextBlock>
                 
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="💡 Tip: " Foreground="{StaticResource PrimaryBrush}" FontWeight="SemiBold"/>
+                    <TextBlock Text="&#xE82F;" FontFamily="{StaticResource IconFont}" FontSize="14" 
+                               Foreground="{StaticResource PrimaryBrush}" Margin="0,0,6,0"/>
+                    <TextBlock Text="Tip: " Foreground="{StaticResource PrimaryBrush}" FontWeight="SemiBold"/>
                     <TextBlock Text="Gateway URL format: http://localhost:18789 or https://your-gateway.example.com" 
                                Foreground="{StaticResource TextSecondaryBrush}"/>
                 </StackPanel>

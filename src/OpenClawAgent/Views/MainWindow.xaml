@@ -9,6 +9,7 @@
         Height="700" Width="1000"
         MinHeight="500" MinWidth="800"
         WindowStartupLocation="CenterScreen"
+        Icon="/Assets/openclaw.ico"
         Style="{StaticResource OpenClawWindowStyle}">
 
     <Window.DataContext>
@@ -33,7 +34,10 @@
 
                 <!-- Logo & Title -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="🦅" FontSize="28" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                    <Border Background="{StaticResource PrimaryBrush}" CornerRadius="8" Padding="8" Margin="0,0,12,0">
+                        <TextBlock Text="&#xE99A;" FontFamily="{StaticResource IconFont}" FontSize="20" 
+                                   Foreground="White" VerticalAlignment="Center"/>
+                    </Border>
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="OpenClaw Agent" FontSize="18" FontWeight="Bold" Foreground="{StaticResource TextPrimaryBrush}"/>
                         <TextBlock Text="{Binding ClientId, StringFormat='ID: {0}'}" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
@@ -45,8 +49,10 @@
                     <Border Style="{Binding ConnectionStatusStyle}" Margin="0,0,12,0">
                         <TextBlock Text="{Binding ConnectionStatusText}" FontSize="12" FontWeight="SemiBold" Foreground="White"/>
                     </Border>
-                    <Button Content="⚙️" Style="{StaticResource SecondaryButtonStyle}" 
-                            Command="{Binding OpenSettingsCommand}" ToolTip="Settings"/>
+                    <Button Style="{StaticResource SecondaryButtonStyle}" 
+                            Command="{Binding OpenSettingsCommand}" ToolTip="Settings" Padding="10,8">
+                        <TextBlock Text="&#xE713;" FontFamily="{StaticResource IconFont}" FontSize="16"/>
+                    </Button>
                 </StackPanel>
             </Grid>
         </Border>
@@ -64,21 +70,33 @@
                     <TextBlock Text="NAVIGATION" FontWeight="Bold" Foreground="{StaticResource TextSecondaryBrush}" 
                                FontSize="11" Margin="0,0,0,12"/>
                     
-                    <Button Content="📊 Dashboard" Style="{StaticResource SecondaryButtonStyle}" 
-                            HorizontalContentAlignment="Left" Margin="0,0,0,4"
-                            Command="{Binding NavigateToDashboardCommand}"/>
+                    <Button Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateToDashboardCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE80F;" Style="{StaticResource IconStyle}" Margin="0,0,12,0"/>
+                            <TextBlock Text="Dashboard" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
                     
-                    <Button Content="🔗 Connector" Style="{StaticResource SecondaryButtonStyle}" 
-                            HorizontalContentAlignment="Left" Margin="0,0,0,4"
-                            Command="{Binding NavigateToConnectorCommand}"/>
+                    <Button Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateToConnectorCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE703;" Style="{StaticResource IconStyle}" Margin="0,0,12,0"/>
+                            <TextBlock Text="Connector" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
                     
-                    <Button Content="💬 Commands" Style="{StaticResource SecondaryButtonStyle}" 
-                            HorizontalContentAlignment="Left" Margin="0,0,0,4"
-                            Command="{Binding NavigateToCommandsCommand}"/>
+                    <Button Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateToCommandsCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE756;" Style="{StaticResource IconStyle}" Margin="0,0,12,0"/>
+                            <TextBlock Text="Commands" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
                     
-                    <Button Content="📋 Logs" Style="{StaticResource SecondaryButtonStyle}" 
-                            HorizontalContentAlignment="Left" Margin="0,0,0,4"
-                            Command="{Binding NavigateToLogsCommand}"/>
+                    <Button Style="{StaticResource NavButtonStyle}" Command="{Binding NavigateToLogsCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE9D5;" Style="{StaticResource IconStyle}" Margin="0,0,12,0"/>
+                            <TextBlock Text="Logs" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
             </Border>
 

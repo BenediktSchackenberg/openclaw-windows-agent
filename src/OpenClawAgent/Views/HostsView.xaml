@@ -29,7 +29,9 @@
 
                     <StackPanel Grid.Column="0">
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                            <TextBlock Text="⚙️ OpenClaw Node Service" FontWeight="Bold" FontSize="16"
+                            <TextBlock Text="&#xE713;" FontFamily="{StaticResource IconFont}" FontSize="18" 
+                                       Foreground="{StaticResource PrimaryBrush}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="OpenClaw Node Service" FontWeight="Bold" FontSize="16"
                                        Foreground="{StaticResource TextPrimaryBrush}"/>
                             <Ellipse Width="10" Height="10" Margin="12,0,0,0" VerticalAlignment="Center">
                                 <Ellipse.Style>
@@ -65,33 +67,61 @@
                                      IsEnabled="{Binding IsServiceInstalled, Converter={StaticResource InverseBoolConverter}}"/>
                         </StackPanel>
 
-                        <TextBlock Text="⚠️ Requires active Gateway connection before installing." 
-                                   Foreground="{StaticResource WarningBrush}" FontSize="11" 
-                                   Visibility="{Binding IsServiceInstalled, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                        <StackPanel Orientation="Horizontal"
+                                   Visibility="{Binding IsServiceInstalled, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                            <TextBlock Text="&#xE7BA;" FontFamily="{StaticResource IconFont}" FontSize="12" 
+                                       Foreground="{StaticResource WarningBrush}" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Requires active Gateway connection before installing." 
+                                       Foreground="{StaticResource WarningBrush}" FontSize="11"/>
+                        </StackPanel>
                     </StackPanel>
 
                     <StackPanel Grid.Column="1" VerticalAlignment="Center" MinWidth="150">
                         <!-- Not Installed -->
-                        <Button Content="📥 Install Service" Style="{StaticResource PrimaryButtonStyle}" 
+                        <Button Style="{StaticResource PrimaryButtonStyle}" 
                                 Command="{Binding InstallServiceCommand}" Margin="0,0,0,8"
-                                Visibility="{Binding IsServiceInstalled, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                                Visibility="{Binding IsServiceInstalled, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE896;" FontFamily="{StaticResource IconFont}" FontSize="14" Margin="0,0,6,0"/>
+                                <TextBlock Text="Install Service"/>
+                            </StackPanel>
+                        </Button>
                         
                         <!-- Installed but stopped -->
                         <StackPanel Visibility="{Binding IsServiceInstalled, Converter={StaticResource BoolToVisibilityConverter}}">
-                            <Button Content="▶️ Start" Style="{StaticResource PrimaryButtonStyle}" 
+                            <Button Style="{StaticResource PrimaryButtonStyle}" 
                                     Command="{Binding StartServiceCommand}" Margin="0,0,0,8"
-                                    Visibility="{Binding IsServiceRunning, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                                    Visibility="{Binding IsServiceRunning, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE768;" FontFamily="{StaticResource IconFont}" FontSize="14" Margin="0,0,6,0"/>
+                                    <TextBlock Text="Start"/>
+                                </StackPanel>
+                            </Button>
                             
-                            <Button Content="⏹️ Stop" Style="{StaticResource SecondaryButtonStyle}" 
+                            <Button Style="{StaticResource SecondaryButtonStyle}" 
                                     Command="{Binding StopServiceCommand}" Margin="0,0,0,8"
-                                    Visibility="{Binding IsServiceRunning, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    Visibility="{Binding IsServiceRunning, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE71A;" FontFamily="{StaticResource IconFont}" FontSize="14" Margin="0,0,6,0"/>
+                                    <TextBlock Text="Stop"/>
+                                </StackPanel>
+                            </Button>
                             
-                            <Button Content="🔄 Restart" Style="{StaticResource SecondaryButtonStyle}" 
+                            <Button Style="{StaticResource SecondaryButtonStyle}" 
                                     Command="{Binding RestartServiceCommand}" Margin="0,0,0,8"
-                                    Visibility="{Binding IsServiceRunning, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    Visibility="{Binding IsServiceRunning, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE72C;" FontFamily="{StaticResource IconFont}" FontSize="14" Margin="0,0,6,0"/>
+                                    <TextBlock Text="Restart"/>
+                                </StackPanel>
+                            </Button>
                             
-                            <Button Content="🗑️ Uninstall" Style="{StaticResource DangerButtonStyle}" 
-                                    Command="{Binding UninstallServiceCommand}"/>
+                            <Button Style="{StaticResource DangerButtonStyle}" Command="{Binding UninstallServiceCommand}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE74D;" FontFamily="{StaticResource IconFont}" FontSize="14" Margin="0,0,6,0"/>
+                                    <TextBlock Text="Uninstall"/>
+                                </StackPanel>
+                            </Button>
                         </StackPanel>
                     </StackPanel>
                 </Grid>
@@ -99,7 +129,14 @@
 
             <!-- Legacy Node Registration Section (for testing) -->
             <Border Grid.Row="2" Style="{StaticResource CardStyle}" Margin="0,0,0,20" Opacity="0.7">
-                <Expander Header="🔧 Manual Node Registration (for testing)" Foreground="{StaticResource TextSecondaryBrush}">
+                <Expander Foreground="{StaticResource TextSecondaryBrush}">
+                    <Expander.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="&#xE90F;" FontFamily="{StaticResource IconFont}" FontSize="14" 
+                                       Margin="0,0,8,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="Manual Node Registration (for testing)" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Expander.Header>
                     <Grid Margin="0,12,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -108,7 +145,9 @@
 
                         <StackPanel Grid.Column="0">
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                <TextBlock Text="🖥️ This PC as Node" FontWeight="Bold" FontSize="14"
+                                <TextBlock Text="&#xE7F4;" FontFamily="{StaticResource IconFont}" FontSize="16" 
+                                           Foreground="{StaticResource PrimaryBrush}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="This PC as Node" FontWeight="Bold" FontSize="14"
                                            Foreground="{StaticResource TextPrimaryBrush}"/>
                                 <Ellipse Width="8" Height="8" Margin="10,0,0,0" VerticalAlignment="Center">
                                     <Ellipse.Style>
@@ -144,12 +183,22 @@
                         </StackPanel>
 
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                            <Button Content="📡 Register" Style="{StaticResource SecondaryButtonStyle}" 
+                            <Button Style="{StaticResource SecondaryButtonStyle}" 
                                     Command="{Binding RegisterAsNodeCommand}" Margin="0,0,0,8" Padding="16,6"
-                                    Visibility="{Binding IsNodeConnected, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
-                            <Button Content="🔌 Unregister" Style="{StaticResource SecondaryButtonStyle}" 
+                                    Visibility="{Binding IsNodeConnected, Converter={StaticResource InverseBoolToVisibilityConverter}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xECAD;" FontFamily="{StaticResource IconFont}" FontSize="14" Margin="0,0,6,0"/>
+                                    <TextBlock Text="Register"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Style="{StaticResource SecondaryButtonStyle}" 
                                     Command="{Binding UnregisterNodeCommand}" Padding="16,6"
-                                    Visibility="{Binding IsNodeConnected, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                    Visibility="{Binding IsNodeConnected, Converter={StaticResource BoolToVisibilityConverter}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE8CD;" FontFamily="{StaticResource IconFont}" FontSize="14" Margin="0,0,6,0"/>
+                                    <TextBlock Text="Unregister"/>
+                                </StackPanel>
+                            </Button>
                         </StackPanel>
                     </Grid>
                 </Expander>
@@ -172,11 +221,21 @@
                                Foreground="{StaticResource TextPrimaryBrush}"/>
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal">
-                        <Button Content="🔄 Refresh" Style="{StaticResource SecondaryButtonStyle}" 
-                                Command="{Binding RefreshStatusCommand}" Margin="0,0,8,0"/>
-                        <Button Content="🚀 Deploy All" Style="{StaticResource PrimaryButtonStyle}" 
+                        <Button Style="{StaticResource SecondaryButtonStyle}" 
+                                Command="{Binding RefreshStatusCommand}" Margin="0,0,8,0">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE72C;" FontFamily="{StaticResource IconFont}" FontSize="14" Margin="0,0,6,0"/>
+                                <TextBlock Text="Refresh"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource PrimaryButtonStyle}" 
                                 Command="{Binding DeployToAllCommand}"
-                                IsEnabled="{Binding IsDeploying, Converter={StaticResource InverseBoolConverter}}"/>
+                                IsEnabled="{Binding IsDeploying, Converter={StaticResource InverseBoolConverter}}">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE7B8;" FontFamily="{StaticResource IconFont}" FontSize="14" Margin="0,0,6,0"/>
+                                <TextBlock Text="Deploy All"/>
+                            </StackPanel>
+                        </Button>
                     </StackPanel>
                 </Grid>
 
@@ -228,30 +287,30 @@
                                             </Grid.ColumnDefinitions>
 
                                             <!-- Status Icon -->
-                                            <TextBlock Grid.Column="0" FontSize="16" VerticalAlignment="Center">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Setter Property="Text" Value="⚪"/>
+                                            <Ellipse Grid.Column="0" Width="12" Height="12" VerticalAlignment="Center">
+                                                <Ellipse.Style>
+                                                    <Style TargetType="Ellipse">
+                                                        <Setter Property="Fill" Value="{StaticResource TextSecondaryBrush}"/>
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding Status}" Value="Online">
-                                                                <Setter Property="Text" Value="🟢"/>
+                                                                <Setter Property="Fill" Value="{StaticResource SuccessBrush}"/>
                                                             </DataTrigger>
                                                             <DataTrigger Binding="{Binding Status}" Value="Offline">
-                                                                <Setter Property="Text" Value="🔴"/>
+                                                                <Setter Property="Fill" Value="{StaticResource ErrorBrush}"/>
                                                             </DataTrigger>
                                                             <DataTrigger Binding="{Binding Status}" Value="Testing">
-                                                                <Setter Property="Text" Value="🟡"/>
+                                                                <Setter Property="Fill" Value="{StaticResource WarningBrush}"/>
                                                             </DataTrigger>
                                                             <DataTrigger Binding="{Binding Status}" Value="Deployed">
-                                                                <Setter Property="Text" Value="✅"/>
+                                                                <Setter Property="Fill" Value="{StaticResource SuccessBrush}"/>
                                                             </DataTrigger>
                                                             <DataTrigger Binding="{Binding Status}" Value="Error">
-                                                                <Setter Property="Text" Value="❌"/>
+                                                                <Setter Property="Fill" Value="{StaticResource ErrorBrush}"/>
                                                             </DataTrigger>
                                                         </Style.Triggers>
                                                     </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
+                                                </Ellipse.Style>
+                                            </Ellipse>
 
                                             <!-- Hostname -->
                                             <StackPanel Grid.Column="1">
@@ -278,7 +337,9 @@
                             <!-- Empty State -->
                             <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center"
                                         Visibility="{Binding Hosts.Count, Converter={StaticResource ZeroToVisibilityConverter}}">
-                                <TextBlock Text="🖥️" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                                <TextBlock Text="&#xE7F4;" FontFamily="{StaticResource IconFont}" FontSize="48" 
+                                           HorizontalAlignment="Center" Margin="0,0,0,12"
+                                           Foreground="{StaticResource TextSecondaryBrush}"/>
                                 <TextBlock Text="No remote hosts configured" 
                                            Foreground="{StaticResource TextSecondaryBrush}"
                                            HorizontalAlignment="Center"/>
@@ -312,8 +373,13 @@
                             <CheckBox Content="Use WinRM" IsChecked="{Binding UseWinRM}" 
                                       Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,16"/>
 
-                            <Button Content="➕ Add Host" Style="{StaticResource PrimaryButtonStyle}" 
-                                    Command="{Binding AddHostCommand}" HorizontalAlignment="Stretch"/>
+                            <Button Style="{StaticResource PrimaryButtonStyle}" 
+                                    Command="{Binding AddHostCommand}" HorizontalAlignment="Stretch">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE710;" FontFamily="{StaticResource IconFont}" FontSize="14" Margin="0,0,6,0"/>
+                                    <TextBlock Text="Add Host"/>
+                                </StackPanel>
+                            </Button>
 
                             <!-- Selected Host Actions -->
                             <Separator Margin="0,20" Background="{StaticResource AccentBrush}"/>
@@ -321,13 +387,23 @@
                             <TextBlock Text="Selected Host" FontWeight="Bold" 
                                        Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,12"/>
 
-                            <Button Content="🚀 Deploy Agent" Style="{StaticResource PrimaryButtonStyle}" 
+                            <Button Style="{StaticResource PrimaryButtonStyle}" 
                                     Command="{Binding DeployToHostCommand}" HorizontalAlignment="Stretch" Margin="0,0,0,8"
-                                    IsEnabled="{Binding SelectedHost, Converter={StaticResource NullToBoolConverter}}"/>
+                                    IsEnabled="{Binding SelectedHost, Converter={StaticResource NullToBoolConverter}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE7B8;" FontFamily="{StaticResource IconFont}" FontSize="14" Margin="0,0,6,0"/>
+                                    <TextBlock Text="Deploy Agent"/>
+                                </StackPanel>
+                            </Button>
 
-                            <Button Content="🗑️ Remove" Style="{StaticResource SecondaryButtonStyle}" 
+                            <Button Style="{StaticResource SecondaryButtonStyle}" 
                                     Command="{Binding RemoveHostCommand}" HorizontalAlignment="Stretch"
-                                    IsEnabled="{Binding SelectedHost, Converter={StaticResource NullToBoolConverter}}"/>
+                                    IsEnabled="{Binding SelectedHost, Converter={StaticResource NullToBoolConverter}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE74D;" FontFamily="{StaticResource IconFont}" FontSize="14" Margin="0,0,6,0"/>
+                                    <TextBlock Text="Remove"/>
+                                </StackPanel>
+                            </Button>
                         </StackPanel>
                     </Border>
                 </Grid>
@@ -338,7 +414,8 @@
                     Padding="12" Margin="0,16,0,0"
                     Visibility="{Binding DeploymentStatus, Converter={StaticResource StringToVisibilityConverter}}">
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="📦 " FontSize="14"/>
+                    <TextBlock Text="&#xE7B8;" FontFamily="{StaticResource IconFont}" FontSize="14" 
+                               Margin="0,0,8,0" Foreground="{StaticResource PrimaryBrush}"/>
                     <TextBlock Text="{Binding DeploymentStatus}" Foreground="{StaticResource TextPrimaryBrush}"/>
                 </StackPanel>
             </Border>

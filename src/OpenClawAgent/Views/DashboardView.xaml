@@ -28,10 +28,19 @@
             </StackPanel>
             
             <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                <Button Content="🔄 Aktualisieren" Style="{StaticResource SecondaryButtonStyle}" 
-                        Command="{Binding RefreshStatusCommand}" Margin="0,0,8,0"/>
-                <Button Content="🗑️ Logs löschen" Style="{StaticResource SecondaryButtonStyle}" 
-                        Command="{Binding ClearLogsCommand}"/>
+                <Button Style="{StaticResource SecondaryButtonStyle}" 
+                        Command="{Binding RefreshStatusCommand}" Margin="0,0,8,0">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE72C;" FontFamily="{StaticResource IconFont}" FontSize="14" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Aktualisieren" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+                <Button Style="{StaticResource SecondaryButtonStyle}" Command="{Binding ClearLogsCommand}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE74D;" FontFamily="{StaticResource IconFont}" FontSize="14" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Logs löschen" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
             </StackPanel>
         </Grid>
 
@@ -47,7 +56,7 @@
                     </Grid.RowDefinitions>
                     
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                        <TextBlock Text="🔗" FontSize="16" Margin="0,0,6,0"/>
+                        <TextBlock Text="&#xE703;" FontFamily="{StaticResource IconFont}" FontSize="16" Margin="0,0,6,0" Foreground="{StaticResource PrimaryBrush}"/>
                         <TextBlock Text="GATEWAY" FontWeight="Bold" FontSize="11"
                                    Foreground="{StaticResource TextSecondaryBrush}"/>
                     </StackPanel>
@@ -95,7 +104,7 @@
                     </Grid.RowDefinitions>
                     
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                        <TextBlock Text="⚙️" FontSize="16" Margin="0,0,6,0"/>
+                        <TextBlock Text="&#xE713;" FontFamily="{StaticResource IconFont}" FontSize="16" Margin="0,0,6,0" Foreground="{StaticResource PrimaryBrush}"/>
                         <TextBlock Text="SERVICE" FontWeight="Bold" FontSize="11"
                                    Foreground="{StaticResource TextSecondaryBrush}"/>
                     </StackPanel>
@@ -119,7 +128,7 @@
                     </Grid.RowDefinitions>
                     
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                        <TextBlock Text="💬" FontSize="16" Margin="0,0,6,0"/>
+                        <TextBlock Text="&#xE8BD;" FontFamily="{StaticResource IconFont}" FontSize="16" Margin="0,0,6,0" Foreground="{StaticResource PrimaryBrush}"/>
                         <TextBlock Text="SESSIONS" FontWeight="Bold" FontSize="11"
                                    Foreground="{StaticResource TextSecondaryBrush}"/>
                     </StackPanel>
@@ -143,7 +152,7 @@
                     </Grid.RowDefinitions>
                     
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                        <TextBlock Text="⏰" FontSize="16" Margin="0,0,6,0"/>
+                        <TextBlock Text="&#xE823;" FontFamily="{StaticResource IconFont}" FontSize="16" Margin="0,0,6,0" Foreground="{StaticResource PrimaryBrush}"/>
                         <TextBlock Text="CRON JOBS" FontWeight="Bold" FontSize="11"
                                    Foreground="{StaticResource TextSecondaryBrush}"/>
                     </StackPanel>
@@ -169,17 +178,20 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="📡 Uptime:" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,8,0"/>
+                    <TextBlock Text="&#xECAD;" FontFamily="{StaticResource IconFont}" FontSize="14" Margin="0,0,6,0" Foreground="{StaticResource TextSecondaryBrush}"/>
+                    <TextBlock Text="Uptime:" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,8,0"/>
                     <TextBlock Text="{Binding GatewayUptime}" Foreground="{StaticResource TextPrimaryBrush}" FontWeight="SemiBold"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center">
-                    <TextBlock Text="🔄 Letzter Sync:" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,8,0"/>
+                    <TextBlock Text="&#xE72C;" FontFamily="{StaticResource IconFont}" FontSize="14" Margin="0,0,6,0" Foreground="{StaticResource TextSecondaryBrush}"/>
+                    <TextBlock Text="Letzter Sync:" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,8,0"/>
                     <TextBlock Text="{Binding LastSync}" Foreground="{StaticResource TextPrimaryBrush}" FontWeight="SemiBold"/>
                 </StackPanel>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
-                    <TextBlock Text="🖥️ Host:" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,8,0"/>
+                    <TextBlock Text="&#xE7F4;" FontFamily="{StaticResource IconFont}" FontSize="14" Margin="0,0,6,0" Foreground="{StaticResource TextSecondaryBrush}"/>
+                    <TextBlock Text="Host:" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,8,0"/>
                     <TextBlock Text="{Binding Source={x:Static System:Environment.MachineName}}" 
                                Foreground="{StaticResource TextPrimaryBrush}" FontWeight="SemiBold"
                                xmlns:System="clr-namespace:System;assembly=mscorlib"/>
@@ -204,7 +216,7 @@
                         </Grid.ColumnDefinitions>
                         
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="📋" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="&#xE9D5;" FontFamily="{StaticResource IconFont}" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center" Foreground="{StaticResource PrimaryBrush}"/>
                             <TextBlock Text="Live Gateway Logs" FontWeight="Bold" FontSize="14"
                                        Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center"/>
                             <Border Background="{StaticResource PrimaryBrush}" CornerRadius="10" 
@@ -273,12 +285,14 @@
                                            Foreground="{StaticResource TextSecondaryBrush}"
                                            VerticalAlignment="Center"/>
 
-                                <!-- Level Emoji -->
+                                <!-- Level Icon -->
                                 <TextBlock Grid.Column="1" 
-                                           Text="{Binding LevelEmoji}" 
+                                           Text="{Binding LevelIcon}" 
+                                           FontFamily="{StaticResource IconFont}"
                                            FontSize="14"
                                            VerticalAlignment="Center"
-                                           HorizontalAlignment="Center"/>
+                                           HorizontalAlignment="Center"
+                                           Foreground="{Binding LevelBrush}"/>
 
                                 <!-- Source -->
                                 <Border Grid.Column="2" 

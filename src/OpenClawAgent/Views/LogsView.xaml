@@ -25,20 +25,42 @@
             <StackPanel Grid.Column="1" Orientation="Horizontal">
                 <Button Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0"
                         Command="{Binding ToggleFollowCommand}">
-                    <Button.Content>
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="▶️ " Visibility="{Binding IsFollowing, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
-                            <TextBlock Text="⏸️ " Visibility="{Binding IsFollowing, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                            <TextBlock Text="Follow"/>
-                        </StackPanel>
-                    </Button.Content>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock FontFamily="{StaticResource IconFont}" FontSize="14" Margin="0,0,6,0" VerticalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Text" Value="&#xE768;"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsFollowing}" Value="True">
+                                            <Setter Property="Text" Value="&#xE769;"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <TextBlock Text="Follow" VerticalAlignment="Center"/>
+                    </StackPanel>
                 </Button>
-                <Button Content="📋 Copy" Style="{StaticResource SecondaryButtonStyle}" 
-                        Command="{Binding CopyToClipboardCommand}" Margin="0,0,8,0"/>
-                <Button Content="💾 Export" Style="{StaticResource SecondaryButtonStyle}" 
-                        Command="{Binding ExportLogsCommand}" Margin="0,0,8,0"/>
-                <Button Content="🗑️ Clear" Style="{StaticResource SecondaryButtonStyle}" 
-                        Command="{Binding ClearLogsCommand}"/>
+                <Button Style="{StaticResource SecondaryButtonStyle}" 
+                        Command="{Binding CopyToClipboardCommand}" Margin="0,0,8,0">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE8C8;" FontFamily="{StaticResource IconFont}" FontSize="14" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Copy" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+                <Button Style="{StaticResource SecondaryButtonStyle}" 
+                        Command="{Binding ExportLogsCommand}" Margin="0,0,8,0">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE74E;" FontFamily="{StaticResource IconFont}" FontSize="14" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Export" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+                <Button Style="{StaticResource SecondaryButtonStyle}" Command="{Binding ClearLogsCommand}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="&#xE74D;" FontFamily="{StaticResource IconFont}" FontSize="14" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Clear" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
             </StackPanel>
         </Grid>
 
