@@ -51,7 +51,16 @@ export default async function NodeDetail({ params }: PageProps) {
   const netData = network?.data || {};
   const swList = software?.data?.installedPrograms || [];
   const hfList = hotfixes?.data?.hotfixes || [];
+  const updateHistoryList = hotfixes?.data?.updateHistory || [];
   const browserData = browser?.data || {};
+  
+  // Hardware uses: ram (not memory), gpu (not gpus), nics (not networkAdapters)
+  const ramData = hwData.ram || {};
+  const gpuList = hwData.gpu || [];
+  const nicsList = hwData.nics || [];
+  
+  // Total updates count
+  const totalUpdatesCount = hfList.length + updateHistoryList.length;
 
   return (
     <main className="min-h-screen bg-background p-8">
@@ -71,7 +80,7 @@ export default async function NodeDetail({ params }: PageProps) {
             <TabsTrigger value="overview">Übersicht</TabsTrigger>
             <TabsTrigger value="hardware">Hardware</TabsTrigger>
             <TabsTrigger value="software">Software ({swList.length})</TabsTrigger>
-            <TabsTrigger value="hotfixes">Updates ({hfList.length})</TabsTrigger>
+            <TabsTrigger value="hotfixes">Updates ({totalUpdatesCount})</TabsTrigger>
             <TabsTrigger value="network">Netzwerk</TabsTrigger>
             <TabsTrigger value="security">Sicherheit</TabsTrigger>
             <TabsTrigger value="browser">Browser</TabsTrigger>
@@ -82,37 +91,37 @@ export default async function NodeDetail({ params }: PageProps) {
               <Card>
                 <CardHeader className="pb-2">
                   <CardDescription>Betriebssystem</CardDescription>
-                  <CardTitle className="text-lg">{sysData.osName || hwData.osName || '-'}</CardTitle>
+                  <CardTitle className="text-lg">{sysData.osName || '-'}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">{sysData.osVersion || hwData.osVersion}</p>
+                  <p className="text-sm text-muted-foreground">{sysData.osVersion || sysData.osBuild}</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className="pb-2">
                   <CardDescription>CPU</CardDescription>
-                  <CardTitle className="text-lg truncate">{hwData.cpuName || '-'}</CardTitle>
+                  <CardTitle className="text-lg truncate">{hwData.cpu?.name || '-'}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">{hwData.cpuCores} Kerne / {hwData.cpuThreads} Threads</p>
+                  <p className="text-sm text-muted-foreground">{hwData.cpu?.cores || '-'} Kerne / {hwData.cpu?.logicalProcessors || '-'} Threads</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className="pb-2">
                   <CardDescription>RAM</CardDescription>
-                  <CardTitle className="text-lg">{hwData.totalMemoryGb?.toFixed(1)} GB</CardTitle>
+                  <CardTitle className="text-lg">{ramData.totalGb?.toFixed(1) || ramData.totalGB?.toFixed(1) || '-'} GB</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">{hwData.memoryModules?.length || 0} Module</p>
+                  <p className="text-sm text-muted-foreground">{ramData.modules?.length || 0} Module</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className="pb-2">
                   <CardDescription>Grafikkarte</CardDescription>
-                  <CardTitle className="text-lg truncate">{hwData.gpuName || '-'}</CardTitle>
+                  <CardTitle className="text-lg truncate">{gpuList[0]?.name || '-'}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-muted-foreground">{hwData.gpuDriverVersion || '-'}</p>
+                  <p className="text-sm text-muted-foreground">{gpuList[0]?.driverVersion || '-'}</p>
                 </CardContent>
               </Card>
             </div>
@@ -123,12 +132,9 @@ export default async function NodeDetail({ params }: PageProps) {
                   <CardTitle>System Info</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <InfoRow label="Hostname" value={hwData.computerName} />
-                  <InfoRow label="Domain" value={sysData.domain || hwData.domain} />
-                  <InfoRow label="Benutzer" value={sysData.currentUser} />
-                  <InfoRow label="Boot Zeit" value={sysData.lastBootTime} />
-                  <InfoRow label="Uptime" value={sysData.uptime} />
-                  <InfoRow label="Timezone" value={sysData.timezone} />
+                  <InfoRow label="Hostname" value={hwData.mainboard?.product ? `${hwData.mainboard.manufacturer} ${hwData.mainboard.product}` : null} />
+                  <InfoRow label="BIOS" value={hwData.bios?.name} />
+                  <InfoRow label="BIOS Datum" value={hwData.bios?.releaseDate} />
                 </CardContent>
               </Card>
               <Card>
@@ -136,10 +142,11 @@ export default async function NodeDetail({ params }: PageProps) {
                   <CardTitle>Netzwerk</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  {netData.adapters?.slice(0, 4).map((adapter: { name: string; ipAddresses?: string[] }, i: number) => (
+                  <InfoRow label="Verbindungen" value={netData.connections?.total?.toString()} />
+                  {netData.connections?.summary?.slice(0, 3).map((s: { state: string; count: number }, i: number) => (
                     <div key={i} className="flex justify-between text-sm">
-                      <span className="text-muted-foreground truncate max-w-[150px]">{adapter.name}</span>
-                      <span>{adapter.ipAddresses?.[0] || '-'}</span>
+                      <span className="text-muted-foreground">{s.state}</span>
+                      <span>{s.count}</span>
                     </div>
                   ))}
                 </CardContent>
@@ -154,32 +161,38 @@ export default async function NodeDetail({ params }: PageProps) {
                   <CardTitle>Prozessor</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <InfoRow label="Name" value={hwData.cpuName} />
-                  <InfoRow label="Kerne" value={hwData.cpuCores} />
-                  <InfoRow label="Threads" value={hwData.cpuThreads} />
-                  <InfoRow label="Max Clock" value={hwData.cpuMaxClockMhz ? `${hwData.cpuMaxClockMhz} MHz` : null} />
-                  <InfoRow label="Architektur" value={hwData.cpuArchitecture} />
+                  <InfoRow label="Name" value={hwData.cpu?.name} />
+                  <InfoRow label="Kerne" value={hwData.cpu?.cores} />
+                  <InfoRow label="Threads" value={hwData.cpu?.logicalProcessors} />
+                  <InfoRow label="Max Clock" value={hwData.cpu?.maxClockSpeedMHz ? `${hwData.cpu.maxClockSpeedMHz} MHz` : null} />
+                  <InfoRow label="Architektur" value={hwData.cpu?.architecture} />
+                  <InfoRow label="Socket" value={hwData.cpu?.socketDesignation} />
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader>
-                  <CardTitle>Grafikkarte</CardTitle>
+                  <CardTitle>Grafikkarte(n)</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <InfoRow label="Name" value={hwData.gpuName} />
-                  <InfoRow label="VRAM" value={hwData.gpuVramMb ? `${(hwData.gpuVramMb / 1024).toFixed(0)} GB` : null} />
-                  <InfoRow label="Treiber" value={hwData.gpuDriverVersion} />
+                  {gpuList.length > 0 ? gpuList.map((gpu: { name: string; vramMB: number; driverVersion: string; status: string }, i: number) => (
+                    <div key={i} className="mb-3">
+                      <InfoRow label="Name" value={gpu.name} />
+                      <InfoRow label="VRAM" value={gpu.vramMB ? `${(gpu.vramMB / 1024).toFixed(0)} GB` : null} />
+                      <InfoRow label="Treiber" value={gpu.driverVersion} />
+                      <InfoRow label="Status" value={gpu.status} />
+                    </div>
+                  )) : <p className="text-muted-foreground text-sm">Keine GPU-Daten</p>}
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader>
-                  <CardTitle>Speicher</CardTitle>
+                  <CardTitle>Speicher (RAM)</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <InfoRow label="Gesamt" value={hwData.totalMemoryGb ? `${hwData.totalMemoryGb.toFixed(1)} GB` : null} />
-                  {hwData.memoryModules?.map((mod: { capacityGb: number; speed: number; manufacturer: string }, i: number) => (
+                  <InfoRow label="Gesamt" value={ramData.totalGb ? `${ramData.totalGb.toFixed(1)} GB` : (ramData.totalGB ? `${ramData.totalGB.toFixed(1)} GB` : null)} />
+                  {(ramData.modules || []).map((mod: { capacityGb: number; capacityGB: number; speedMHz: number; manufacturer: string; partNumber: string }, i: number) => (
                     <div key={i} className="text-sm text-muted-foreground">
-                      Slot {i + 1}: {mod.capacityGb} GB @ {mod.speed} MHz ({mod.manufacturer})
+                      Slot {i + 1}: {mod.capacityGb || mod.capacityGB} GB @ {mod.speedMHz} MHz ({mod.manufacturer} {mod.partNumber})
                     </div>
                   ))}
                 </CardContent>
@@ -188,13 +201,25 @@ export default async function NodeDetail({ params }: PageProps) {
                 <CardHeader>
                   <CardTitle>Festplatten</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2">
-                  {hwData.disks?.map((disk: { model: string; sizeGb: number; mediaType: string }, i: number) => (
-                    <div key={i} className="flex justify-between text-sm">
-                      <span className="text-muted-foreground truncate max-w-[200px]">{disk.model}</span>
-                      <span>{disk.sizeGb?.toFixed(0)} GB ({disk.mediaType})</span>
-                    </div>
-                  ))}
+                <CardContent className="space-y-4">
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Physische Laufwerke</h4>
+                    {(hwData.disks?.physical || []).map((disk: { model: string; sizeGB: number; mediaType: string; interfaceType: string; serialNumber: string }, i: number) => (
+                      <div key={i} className="flex justify-between text-sm mb-1">
+                        <span className="text-muted-foreground truncate max-w-[200px]">{disk.model}</span>
+                        <span>{disk.sizeGB?.toFixed(0)} GB ({disk.interfaceType})</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Volumes</h4>
+                    {(hwData.disks?.volumes || []).map((vol: { driveLetter: string; volumeName: string; sizeGB: number; freeGB: number; fileSystem: string; usedPercent: number }, i: number) => (
+                      <div key={i} className="flex justify-between text-sm mb-1">
+                        <span className="text-muted-foreground">{vol.driveLetter} {vol.volumeName && `(${vol.volumeName})`}</span>
+                        <span>{vol.freeGB?.toFixed(0)}/{vol.sizeGB?.toFixed(0)} GB frei ({vol.fileSystem})</span>
+                      </div>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -236,73 +261,172 @@ export default async function NodeDetail({ params }: PageProps) {
           </TabsContent>
 
           <TabsContent value="hotfixes">
-            <Card>
-              <CardHeader>
-                <CardTitle>Windows Updates ({hfList.length})</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>HotfixID</TableHead>
-                      <TableHead>Beschreibung</TableHead>
-                      <TableHead>Installiert am</TableHead>
-                      <TableHead>Installiert von</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {hfList.map((hf: { hotfixId: string; description: string; installedOn: string; installedBy: string }, i: number) => (
-                      <TableRow key={i}>
-                        <TableCell className="font-mono">{hf.hotfixId}</TableCell>
-                        <TableCell>{hf.description || '-'}</TableCell>
-                        <TableCell>{hf.installedOn || '-'}</TableCell>
-                        <TableCell>{hf.installedBy || '-'}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+            <div className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Klassische Hotfixes ({hfList.length})</CardTitle>
+                  <CardDescription>Via WMI / Get-HotFix</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {hfList.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>HotfixID</TableHead>
+                          <TableHead>Beschreibung</TableHead>
+                          <TableHead>Installiert am</TableHead>
+                          <TableHead>Installiert von</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {hfList.map((hf: { hotfixId: string; description: string; installedOn: string; installedBy: string }, i: number) => (
+                          <TableRow key={i}>
+                            <TableCell className="font-mono">{hf.hotfixId}</TableCell>
+                            <TableCell>{hf.description || '-'}</TableCell>
+                            <TableCell>{hf.installedOn || '-'}</TableCell>
+                            <TableCell>{hf.installedBy || '-'}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <p className="text-muted-foreground text-sm">Keine klassischen Hotfixes gefunden</p>
+                  )}
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Windows Update History ({updateHistoryList.length})</CardTitle>
+                  <CardDescription>Alle installierten Updates via Windows Update</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {updateHistoryList.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[100px]">KB</TableHead>
+                          <TableHead>Titel</TableHead>
+                          <TableHead className="w-[150px]">Installiert am</TableHead>
+                          <TableHead className="w-[100px]">Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {updateHistoryList.slice(0, 100).map((upd: { kbId: string; title: string; installedOn: string; resultCode: string; operation: string; supportUrl: string; categories: string[] }, i: number) => (
+                          <TableRow key={i}>
+                            <TableCell className="font-mono text-xs">{upd.kbId || '-'}</TableCell>
+                            <TableCell className="max-w-[400px] truncate" title={upd.title}>
+                              {upd.supportUrl ? (
+                                <a href={upd.supportUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                                  {upd.title}
+                                </a>
+                              ) : upd.title}
+                            </TableCell>
+                            <TableCell className="text-xs">{upd.installedOn?.replace('T', ' ').slice(0, 19) || '-'}</TableCell>
+                            <TableCell>
+                              <Badge variant={upd.resultCode === 'Succeeded' ? 'default' : upd.resultCode === 'Failed' ? 'destructive' : 'secondary'}>
+                                {upd.resultCode || upd.operation}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <p className="text-muted-foreground text-sm">Keine Update History vorhanden</p>
+                  )}
+                  {updateHistoryList.length > 100 && (
+                    <p className="text-sm text-muted-foreground mt-4">
+                      Zeige 100 von {updateHistoryList.length} Einträgen
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           <TabsContent value="network">
-            <Card>
-              <CardHeader>
-                <CardTitle>Netzwerkadapter</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {netData.adapters?.map((adapter: { name: string; status: string; macAddress: string; ipAddresses?: string[]; gateway?: string; dnsServers?: string[] }, i: number) => (
-                    <div key={i} className="border rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="font-medium">{adapter.name}</span>
-                        <Badge variant={adapter.status === 'Up' ? 'default' : 'secondary'}>
-                          {adapter.status}
-                        </Badge>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <InfoRow label="MAC" value={adapter.macAddress} />
-                        <InfoRow label="IP" value={adapter.ipAddresses?.join(', ')} />
-                        <InfoRow label="Gateway" value={adapter.gateway} />
-                        <InfoRow label="DNS" value={adapter.dnsServers?.join(', ')} />
-                      </div>
+            <div className="space-y-4">
+              {netData.adapters?.length > 0 ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Netzwerkadapter</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {netData.adapters?.map((adapter: { name: string; status: string; macAddress: string; ipAddresses?: string[]; gateway?: string; dnsServers?: string[] }, i: number) => (
+                        <div key={i} className="border rounded-lg p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="font-medium">{adapter.name}</span>
+                            <Badge variant={adapter.status === 'Up' ? 'default' : 'secondary'}>
+                              {adapter.status}
+                            </Badge>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <InfoRow label="MAC" value={adapter.macAddress} />
+                            <InfoRow label="IP" value={adapter.ipAddresses?.join(', ')} />
+                            <InfoRow label="Gateway" value={adapter.gateway} />
+                            <InfoRow label="DNS" value={adapter.dnsServers?.join(', ')} />
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+              ) : null}
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Aktive Verbindungen ({netData.connections?.total || 0})</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {netData.connections?.summary?.length > 0 ? (
+                    <div className="mb-4 flex gap-4">
+                      {netData.connections.summary.map((s: { state: string; count: number }, i: number) => (
+                        <Badge key={i} variant="outline">{s.state}: {s.count}</Badge>
+                      ))}
+                    </div>
+                  ) : null}
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Lokal</TableHead>
+                        <TableHead>Remote</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {(netData.connections?.connections || []).filter((c: { remoteAddress: string }) => !c.remoteAddress.startsWith('127.')).slice(0, 30).map((conn: { localAddress: string; localPort: number; remoteAddress: string; remotePort: number; state: string }, i: number) => (
+                        <TableRow key={i}>
+                          <TableCell className="font-mono text-xs">{conn.localAddress}:{conn.localPort}</TableCell>
+                          <TableCell className="font-mono text-xs">{conn.remoteAddress}:{conn.remotePort}</TableCell>
+                          <TableCell>
+                            <Badge variant={conn.state === 'Established' ? 'default' : 'secondary'}>{conn.state}</Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           <TabsContent value="security">
             <div className="grid gap-4 md:grid-cols-2">
               <Card>
                 <CardHeader>
-                  <CardTitle>Antivirus</CardTitle>
+                  <CardTitle>Windows Defender</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <InfoRow label="Produkt" value={secData.antivirusProduct} />
-                  <InfoRow label="Status" value={secData.antivirusEnabled ? '✅ Aktiv' : '❌ Inaktiv'} />
-                  <InfoRow label="Aktuell" value={secData.antivirusUpToDate ? '✅ Ja' : '⚠️ Nein'} />
+                  {secData.defender && Object.keys(secData.defender).length > 0 ? (
+                    <>
+                      <InfoRow label="Echtzeitschutz" value={secData.defender.realTimeProtection ? '✅ Aktiv' : '❌ Inaktiv'} />
+                      <InfoRow label="Definitionen" value={secData.defender.definitionsUpToDate ? '✅ Aktuell' : '⚠️ Veraltet'} />
+                    </>
+                  ) : (
+                    <p className="text-muted-foreground text-sm">Keine Defender-Daten</p>
+                  )}
                 </CardContent>
               </Card>
               <Card>
@@ -310,25 +434,57 @@ export default async function NodeDetail({ params }: PageProps) {
                   <CardTitle>Firewall</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <InfoRow label="Produkt" value={secData.firewallProduct} />
-                  <InfoRow label="Status" value={secData.firewallEnabled ? '✅ Aktiv' : '❌ Inaktiv'} />
+                  {secData.firewall?.profiles?.map((profile: { name: string; enabled: boolean }, i: number) => (
+                    <InfoRow key={i} label={profile.name} value={profile.enabled ? '✅ Aktiv' : '❌ Inaktiv'} />
+                  ))}
                 </CardContent>
               </Card>
               <Card>
+                <CardHeader>
+                  <CardTitle>TPM</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <InfoRow label="Vorhanden" value={secData.tpm?.present ? '✅ Ja' : '❌ Nein'} />
+                  <InfoRow label="Aktiviert" value={secData.tpm?.enabled ? '✅ Ja' : '❌ Nein'} />
+                  <InfoRow label="Version" value={secData.tpm?.manufacturerVersion} />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>UAC</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <InfoRow label="Aktiviert" value={secData.uac?.enabled ? '✅ Ja' : '❌ Nein'} />
+                  <InfoRow label="Secure Desktop" value={secData.uac?.secureDesktopPrompt ? '✅ Ja' : '❌ Nein'} />
+                </CardContent>
+              </Card>
+              <Card className="md:col-span-2">
                 <CardHeader>
                   <CardTitle>BitLocker</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2">
-                  <InfoRow label="Status" value={secData.bitlockerEnabled ? '🔒 Verschlüsselt' : '🔓 Nicht verschlüsselt'} />
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Windows Update</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <InfoRow label="Letztes Update" value={secData.lastWindowsUpdate} />
-                  <InfoRow label="Ausstehend" value={secData.pendingUpdates?.toString()} />
+                <CardContent>
+                  {secData.bitlocker?.available ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Volume</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Schutz</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {secData.bitlocker.volumes?.map((vol: { mountPoint: string; volumeStatus: string; protectionStatus: string }, i: number) => (
+                          <TableRow key={i}>
+                            <TableCell className="font-mono">{vol.mountPoint}</TableCell>
+                            <TableCell>{vol.volumeStatus === '0' ? 'Nicht verschlüsselt' : 'Verschlüsselt'}</TableCell>
+                            <TableCell>{vol.protectionStatus === '0' ? '🔓 Aus' : '🔒 An'}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <p className="text-muted-foreground text-sm">BitLocker nicht verfügbar</p>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -336,38 +492,53 @@ export default async function NodeDetail({ params }: PageProps) {
 
           <TabsContent value="browser">
             <div className="grid gap-4 md:grid-cols-3">
-              {browserData.chrome && (
+              {browserData.Chrome && (
                 <Card>
                   <CardHeader>
                     <CardTitle>🌐 Chrome</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    <InfoRow label="Version" value={browserData.chrome.version} />
-                    <InfoRow label="Extensions" value={browserData.chrome.extensionCount?.toString()} />
+                    <InfoRow label="Profile" value={browserData.Chrome.profiles?.length?.toString() || '0'} />
+                    <InfoRow label="Extensions" value={browserData.Chrome.extensionCount?.toString()} />
+                    {browserData.Chrome.profiles?.map((p: { name: string; historyCount: number; bookmarkCount: number }, i: number) => (
+                      <div key={i} className="text-xs text-muted-foreground mt-2 border-t pt-2">
+                        <p className="font-medium">{p.name}</p>
+                        <p>History: {p.historyCount || 0} | Bookmarks: {p.bookmarkCount || 0}</p>
+                      </div>
+                    ))}
                   </CardContent>
                 </Card>
               )}
-              {browserData.firefox && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>🦊 Firefox</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <InfoRow label="Version" value={browserData.firefox.version} />
-                    <InfoRow label="Extensions" value={browserData.firefox.extensionCount?.toString()} />
-                  </CardContent>
-                </Card>
-              )}
-              {browserData.edge && (
+              {browserData.Edge && (
                 <Card>
                   <CardHeader>
                     <CardTitle>🔷 Edge</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    <InfoRow label="Version" value={browserData.edge.version} />
-                    <InfoRow label="Extensions" value={browserData.edge.extensionCount?.toString()} />
+                    <InfoRow label="Profile" value={browserData.Edge.profiles?.length?.toString() || '0'} />
+                    <InfoRow label="Extensions" value={browserData.Edge.extensionCount?.toString()} />
+                    {browserData.Edge.profiles?.map((p: { name: string; historyCount: number; bookmarkCount: number }, i: number) => (
+                      <div key={i} className="text-xs text-muted-foreground mt-2 border-t pt-2">
+                        <p className="font-medium">{p.name}</p>
+                        <p>History: {p.historyCount || 0} | Bookmarks: {p.bookmarkCount || 0}</p>
+                      </div>
+                    ))}
                   </CardContent>
                 </Card>
+              )}
+              {browserData.Firefox && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>🦊 Firefox</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <InfoRow label="Profile" value={browserData.Firefox.profiles?.length?.toString() || '0'} />
+                    <InfoRow label="Extensions" value={browserData.Firefox.extensionCount?.toString()} />
+                  </CardContent>
+                </Card>
+              )}
+              {!browserData.Chrome && !browserData.Edge && !browserData.Firefox && (
+                <p className="text-muted-foreground col-span-3">Keine Browser-Daten vorhanden</p>
               )}
             </div>
           </TabsContent>

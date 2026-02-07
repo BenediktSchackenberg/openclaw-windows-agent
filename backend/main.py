@@ -10,6 +10,7 @@ from typing import Optional, Any, Dict
 import os
 import json
 from uuid import UUID
+import re
 
 # Config
 DATABASE_URL = os.getenv(
@@ -20,6 +21,40 @@ API_KEY = os.getenv("INVENTORY_API_KEY", "openclaw-inventory-dev-key")
 
 # Database pool
 db_pool: Optional[asyncpg.Pool] = None
+
+
+def sanitize_for_postgres(value: Any) -> Any:
+    """Remove null bytes and other problematic characters from strings"""
+    if value is None:
+        return None
+    if isinstance(value, str):
+        # Remove null bytes that PostgreSQL can't handle
+        return value.replace('\x00', '').replace('\u0000', '')
+    if isinstance(value, dict):
+        return {k: sanitize_for_postgres(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [sanitize_for_postgres(item) for item in value]
+    return value
+
+
+def parse_datetime(value: str | None) -> Any:
+    """Parse datetime string to timestamp or None"""
+    if not value:
+        return None
+    try:
+        from datetime import datetime
+        # Try ISO format first
+        if 'T' in value:
+            return datetime.fromisoformat(value.replace('Z', '+00:00'))
+        # Try common date formats
+        for fmt in ['%Y-%m-%d %H:%M:%S', '%Y-%m-%d', '%m/%d/%Y']:
+            try:
+                return datetime.strptime(value, fmt)
+            except ValueError:
+                continue
+        return None
+    except Exception:
+        return None
 
 
 async def get_db() -> asyncpg.Pool:
@@ -141,12 +176,12 @@ async def get_hardware(node_id: str, db: asyncpg.Pool = Depends(get_db)):
         
         return {"data": {
             "cpu": json.loads(row['cpu']) if row['cpu'] else {},
-            "memory": json.loads(row['ram']) if row['ram'] else {},
-            "disks": json.loads(row['disks']) if row['disks'] else [],
+            "ram": json.loads(row['ram']) if row['ram'] else {},
+            "disks": json.loads(row['disks']) if row['disks'] else {},
             "mainboard": json.loads(row['mainboard']) if row['mainboard'] else {},
             "bios": json.loads(row['bios']) if row['bios'] else {},
-            "gpus": json.loads(row['gpu']) if row['gpu'] else [],
-            "networkAdapters": json.loads(row['nics']) if row['nics'] else [],
+            "gpu": json.loads(row['gpu']) if row['gpu'] else [],
+            "nics": json.loads(row['nics']) if row['nics'] else [],
             "updatedAt": row['updated_at'].isoformat() if row['updated_at'] else None
         }}
 
@@ -169,19 +204,43 @@ async def get_software(node_id: str, db: asyncpg.Pool = Depends(get_db)):
 
 @app.get("/api/v1/inventory/hotfixes/{node_id}")
 async def get_hotfixes(node_id: str, db: asyncpg.Pool = Depends(get_db)):
-    """Get hotfix data for a node"""
+    """Get hotfix data for a node (classic hotfixes + Windows Update History)"""
     async with db.acquire() as conn:
         node = await conn.fetchrow("SELECT id FROM nodes WHERE node_id = $1", node_id)
         if not node:
             raise HTTPException(status_code=404, detail="Node not found")
         
-        rows = await conn.fetch("""
+        # Get classic hotfixes
+        hotfix_rows = await conn.fetch("""
             SELECT kb_id as "hotfixId", description, installed_on as "installedOn", 
                    installed_by as "installedBy"
             FROM hotfixes_current WHERE node_id = $1 ORDER BY installed_on DESC
         """, node['id'])
         
-        return {"data": {"hotfixes": [dict(r) for r in rows]}}
+        # Get Windows Update History
+        update_rows = await conn.fetch("""
+            SELECT update_id as "updateId", kb_id as "kbId", title, description,
+                   installed_on as "installedOn", operation, result_code as "resultCode",
+                   support_url as "supportUrl", categories
+            FROM update_history WHERE node_id = $1 ORDER BY installed_on DESC
+        """, node['id'])
+        
+        # Parse categories JSON
+        update_history = []
+        for row in update_rows:
+            entry = dict(row)
+            if entry.get('categories'):
+                entry['categories'] = json.loads(entry['categories'])
+            update_history.append(entry)
+        
+        return {
+            "data": {
+                "hotfixes": [dict(r) for r in hotfix_rows],
+                "updateHistory": update_history,
+                "hotfixCount": len(hotfix_rows),
+                "updateHistoryCount": len(update_history)
+            }
+        }
 
 
 @app.get("/api/v1/inventory/system/{node_id}")
@@ -267,7 +326,7 @@ async def get_browser(node_id: str, db: asyncpg.Pool = Depends(get_db)):
             raise HTTPException(status_code=404, detail="Node not found")
         
         rows = await conn.fetch("""
-            SELECT browser, profile_name, history_count, bookmark_count, 
+            SELECT browser, profile, profile_path, history_count, bookmark_count, 
                    password_count, extensions
             FROM browser_current WHERE node_id = $1
         """, node['id'])
@@ -279,7 +338,8 @@ async def get_browser(node_id: str, db: asyncpg.Pool = Depends(get_db)):
             if b not in browsers:
                 browsers[b] = {"profiles": [], "extensionCount": 0}
             browsers[b]["profiles"].append({
-                "name": row['profile_name'],
+                "name": row['profile'],
+                "path": row['profile_path'],
                 "historyCount": row['history_count'],
                 "bookmarkCount": row['bookmark_count'],
                 "passwordCount": row['password_count']
@@ -299,6 +359,7 @@ async def submit_hardware(data: Dict[str, Any], db: asyncpg.Pool = Depends(get_d
     
     uuid = await upsert_node(db, node_id_str, hostname)
     
+    # Windows Agent uses: ram (not memory), gpu (not gpus), nics (not networkAdapters)
     async with db.acquire() as conn:
         await conn.execute("""
             INSERT INTO hardware_current (node_id, cpu, ram, disks, mainboard, bios, gpu, nics, updated_at)
@@ -309,12 +370,12 @@ async def submit_hardware(data: Dict[str, Any], db: asyncpg.Pool = Depends(get_d
         """,
             uuid,
             json.dumps(data.get("cpu", {})),
-            json.dumps(data.get("memory", {})),
-            json.dumps(data.get("disks", [])),
+            json.dumps(data.get("ram") or data.get("memory", {})),
+            json.dumps(data.get("disks", {})),
             json.dumps(data.get("mainboard", {})),
             json.dumps(data.get("bios", {})),
-            json.dumps(data.get("gpus", [])),
-            json.dumps(data.get("networkAdapters", []))
+            json.dumps(data.get("gpu") or data.get("gpus", [])),
+            json.dumps(data.get("nics") or data.get("networkAdapters", []))
         )
         
         # Log to hypertable
@@ -358,29 +419,94 @@ async def submit_software(data: Dict[str, Any], db: asyncpg.Pool = Depends(get_d
 
 @app.post("/api/v1/inventory/hotfixes", dependencies=[Depends(verify_api_key)])
 async def submit_hotfixes(data: Dict[str, Any], db: asyncpg.Pool = Depends(get_db)):
-    """Submit hotfix inventory"""
+    """Submit hotfix inventory (includes classic hotfixes AND Windows Update History)"""
     hostname = data.get("hostname", "unknown")
     node_id_str = data.get("nodeId", hostname)
     hotfixes = data.get("hotfixes", [])
+    update_history = data.get("updateHistory", [])
     
     uuid = await upsert_node(db, node_id_str, hostname)
     
     async with db.acquire() as conn:
+        # Store classic hotfixes
         await conn.execute("DELETE FROM hotfixes_current WHERE node_id = $1", uuid)
         
         for hf in hotfixes:
+            # Handle both dict and string formats
+            # Windows Agent uses "kbId" (camelCase), not "hotfixId"
+            if isinstance(hf, dict):
+                kb_id = hf.get("kbId") or hf.get("hotfixId") or ""
+                if not kb_id:  # Skip entries without KB ID
+                    continue
+                await conn.execute("""
+                    INSERT INTO hotfixes_current (node_id, kb_id, description, installed_on, installed_by, updated_at)
+                    VALUES ($1, $2, $3, $4, $5, NOW())
+                    ON CONFLICT (node_id, kb_id) DO UPDATE SET
+                        description = EXCLUDED.description,
+                        installed_on = EXCLUDED.installed_on,
+                        installed_by = EXCLUDED.installed_by,
+                        updated_at = NOW()
+                """,
+                    uuid,
+                    kb_id,
+                    hf.get("description"),
+                    parse_datetime(hf.get("installedOn")),
+                    hf.get("installedBy")
+                )
+            elif isinstance(hf, str) and hf:
+                await conn.execute("""
+                    INSERT INTO hotfixes_current (node_id, kb_id, description, installed_on, installed_by, updated_at)
+                    VALUES ($1, $2, $3, $4, $5, NOW())
+                    ON CONFLICT (node_id, kb_id) DO UPDATE SET updated_at = NOW()
+                """,
+                    uuid,
+                    hf,  # Just the KB ID as string
+                    None,
+                    None,
+                    None
+                )
+        
+        # Store Windows Update History
+        await conn.execute("DELETE FROM update_history WHERE node_id = $1", uuid)
+        
+        for upd in update_history:
+            update_id = upd.get("updateId") or upd.get("title", "")[:100]
+            if not update_id:
+                continue
             await conn.execute("""
-                INSERT INTO hotfixes_current (node_id, kb_id, description, installed_on, installed_by, updated_at)
-                VALUES ($1, $2, $3, $4, $5, NOW())
+                INSERT INTO update_history (node_id, update_id, kb_id, title, description, 
+                    installed_on, operation, result_code, support_url, categories, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
+                ON CONFLICT (node_id, update_id) DO UPDATE SET
+                    kb_id = EXCLUDED.kb_id,
+                    title = EXCLUDED.title,
+                    description = EXCLUDED.description,
+                    installed_on = EXCLUDED.installed_on,
+                    operation = EXCLUDED.operation,
+                    result_code = EXCLUDED.result_code,
+                    support_url = EXCLUDED.support_url,
+                    categories = EXCLUDED.categories,
+                    updated_at = NOW()
             """,
                 uuid,
-                hf.get("hotfixId", ""),
-                hf.get("description"),
-                None,  # installed_on needs date parsing
-                hf.get("installedBy")
+                update_id,
+                upd.get("kbId"),
+                upd.get("title", "Unknown Update")[:500],
+                upd.get("description"),
+                parse_datetime(upd.get("installedOn")),
+                upd.get("operation"),
+                upd.get("resultCode"),
+                upd.get("supportUrl"),
+                json.dumps(upd.get("categories", []))
             )
     
-    return {"status": "ok", "node_id": str(uuid), "type": "hotfixes", "count": len(hotfixes)}
+    return {
+        "status": "ok", 
+        "node_id": str(uuid), 
+        "type": "hotfixes", 
+        "hotfixCount": len(hotfixes),
+        "updateHistoryCount": len(update_history)
+    }
 
 
 @app.post("/api/v1/inventory/system", dependencies=[Depends(verify_api_key)])
@@ -471,30 +597,70 @@ async def submit_browser(data: Dict[str, Any], db: asyncpg.Pool = Depends(get_db
     """Submit browser inventory"""
     hostname = data.get("hostname", "unknown")
     node_id_str = data.get("nodeId", hostname)
-    browsers = data.get("browsers", [])
+    browsers = data.get("browsers", {})
     
     uuid = await upsert_node(db, node_id_str, hostname)
     
     async with db.acquire() as conn:
         await conn.execute("DELETE FROM browser_current WHERE node_id = $1", uuid)
         
-        for browser in browsers:
-            browser_name = browser.get("browser", "Unknown")
-            for profile in browser.get("profiles", []):
-                await conn.execute("""
-                    INSERT INTO browser_current (node_id, browser, profile_name, profile_path,
-                        history_count, bookmark_count, password_count, extensions, updated_at)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
-                """,
-                    uuid,
-                    browser_name,
-                    profile.get("name", "Default"),
-                    profile.get("path"),
-                    profile.get("historyCount"),
-                    profile.get("bookmarkCount"),
-                    profile.get("savedPasswordCount"),
-                    json.dumps(profile.get("extensions", []))
-                )
+        # Handle Windows Agent format: { chrome: {...}, edge: {...}, firefox: {...} }
+        if isinstance(browsers, dict):
+            for browser_name, browser_data in browsers.items():
+                if not isinstance(browser_data, dict):
+                    continue
+                # Each browser has: { installed: bool, profileCount: N, profiles: [...] }
+                profiles = browser_data.get("profiles", [])
+                for profile in profiles:
+                    await conn.execute("""
+                        INSERT INTO browser_current (node_id, browser, profile, profile_path,
+                            history_count, bookmark_count, password_count, extensions, updated_at)
+                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+                        ON CONFLICT (node_id, browser, profile) DO UPDATE SET
+                            profile_path = EXCLUDED.profile_path,
+                            history_count = EXCLUDED.history_count,
+                            bookmark_count = EXCLUDED.bookmark_count,
+                            password_count = EXCLUDED.password_count,
+                            extensions = EXCLUDED.extensions,
+                            updated_at = NOW()
+                    """,
+                        uuid,
+                        browser_name.title(),  # chrome -> Chrome
+                        profile.get("name", "Default"),
+                        profile.get("path"),
+                        profile.get("historyCount"),
+                        profile.get("bookmarkCount"),
+                        profile.get("savedPasswordCount"),
+                        json.dumps(profile.get("extensions", []))
+                    )
+        # Also handle legacy array format
+        elif isinstance(browsers, list):
+            for browser in browsers:
+                if not isinstance(browser, dict):
+                    continue
+                browser_name = browser.get("browser", "Unknown")
+                for profile in browser.get("profiles", []):
+                    await conn.execute("""
+                        INSERT INTO browser_current (node_id, browser, profile, profile_path,
+                            history_count, bookmark_count, password_count, extensions, updated_at)
+                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+                        ON CONFLICT (node_id, browser, profile) DO UPDATE SET
+                            profile_path = EXCLUDED.profile_path,
+                            history_count = EXCLUDED.history_count,
+                            bookmark_count = EXCLUDED.bookmark_count,
+                            password_count = EXCLUDED.password_count,
+                            extensions = EXCLUDED.extensions,
+                            updated_at = NOW()
+                    """,
+                        uuid,
+                        browser_name,
+                        profile.get("name", "Default"),
+                        profile.get("path"),
+                        profile.get("historyCount"),
+                        profile.get("bookmarkCount"),
+                        profile.get("savedPasswordCount"),
+                        json.dumps(profile.get("extensions", []))
+                    )
     
     return {"status": "ok", "node_id": str(uuid), "type": "browser"}
 
@@ -502,42 +668,92 @@ async def submit_browser(data: Dict[str, Any], db: asyncpg.Pool = Depends(get_db
 @app.post("/api/v1/inventory/full", dependencies=[Depends(verify_api_key)])
 async def submit_full(data: Dict[str, Any], db: asyncpg.Pool = Depends(get_db)):
     """Submit full inventory (all types at once)"""
+    # Sanitize all incoming data to remove null bytes
+    data = sanitize_for_postgres(data)
+    
     hostname = data.get("hostname", "unknown")
     results = {"hostname": hostname, "submitted": []}
     
-    # Hardware
-    if "cpu" in data or "memory" in data:
-        await submit_hardware(data, db)
+    # Windows Agent sends: { hardware: { cpu: {...}, ram: {...} }, software: { count: N, software: [...] }, ... }
+    # (No "data" wrapper - the data IS the hardware/software/etc object directly)
+    
+    # Extract hardware data - hardware object contains cpu, ram, disks, etc. directly
+    hw_data = data.get("hardware", {})
+    if hw_data.get("cpu") or hw_data.get("ram"):
+        flat_hw = {
+            "hostname": hostname,
+            "nodeId": data.get("nodeId", hostname),
+            **hw_data
+        }
+        await submit_hardware(flat_hw, db)
         results["submitted"].append("hardware")
     
-    # Software
-    if "programs" in data:
-        await submit_software(data, db)
+    # Extract software data - software.software is the array
+    sw_obj = data.get("software", {})
+    sw_data = sw_obj.get("software", []) if isinstance(sw_obj, dict) else sw_obj
+    if sw_data:
+        flat_sw = {
+            "hostname": hostname,
+            "nodeId": data.get("nodeId", hostname),
+            "programs": sw_data
+        }
+        await submit_software(flat_sw, db)
         results["submitted"].append("software")
     
-    # Hotfixes
-    if "hotfixes" in data:
-        await submit_hotfixes(data, db)
+    # Extract hotfixes data - hotfixes.hotfixes is the array
+    hf_obj = data.get("hotfixes", {})
+    hf_data = hf_obj.get("hotfixes", []) if isinstance(hf_obj, dict) else hf_obj
+    if hf_data:
+        flat_hf = {
+            "hostname": hostname,
+            "nodeId": data.get("nodeId", hostname),
+            "hotfixes": hf_data
+        }
+        await submit_hotfixes(flat_hf, db)
         results["submitted"].append("hotfixes")
     
-    # System
-    if "os" in data or "services" in data:
-        await submit_system(data, db)
+    # Extract system data - system object contains os, services, etc. directly
+    sys_data = data.get("system", {})
+    if sys_data.get("os") or sys_data.get("services"):
+        flat_sys = {
+            "hostname": hostname,
+            "nodeId": data.get("nodeId", hostname),
+            **sys_data
+        }
+        await submit_system(flat_sys, db)
         results["submitted"].append("system")
     
-    # Security
-    if "defender" in data or "firewall" in data:
-        await submit_security(data, db)
+    # Extract security data - security object contains antivirus, firewall, etc. directly
+    sec_data = data.get("security", {})
+    if sec_data.get("antivirus") or sec_data.get("firewall") or sec_data.get("bitlocker"):
+        flat_sec = {
+            "hostname": hostname,
+            "nodeId": data.get("nodeId", hostname),
+            **sec_data
+        }
+        await submit_security(flat_sec, db)
         results["submitted"].append("security")
     
-    # Network
-    if "adapters" in data or "connections" in data:
-        await submit_network(data, db)
+    # Extract network data - network object contains openPorts, connections, networkInterfaces, etc.
+    net_data = data.get("network", {})
+    if net_data.get("openPorts") or net_data.get("connections") or net_data.get("networkInterfaces"):
+        flat_net = {
+            "hostname": hostname,
+            "nodeId": data.get("nodeId", hostname),
+            **net_data
+        }
+        await submit_network(flat_net, db)
         results["submitted"].append("network")
     
-    # Browser
-    if "browsers" in data:
-        await submit_browser(data, db)
+    # Extract browser data - browser object contains chrome, edge, firefox, etc.
+    br_data = data.get("browser", {})
+    if br_data.get("chrome") or br_data.get("edge") or br_data.get("firefox"):
+        flat_br = {
+            "hostname": hostname,
+            "nodeId": data.get("nodeId", hostname),
+            "browsers": br_data
+        }
+        await submit_browser(flat_br, db)
         results["submitted"].append("browser")
     
     return {"status": "ok", **results}
