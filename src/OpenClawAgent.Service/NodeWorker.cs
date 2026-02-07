@@ -10,6 +10,7 @@ namespace OpenClawAgent.Service;
 
 /// <summary>
 /// Background worker that maintains the Node connection to the Gateway
+/// with automatic reconnection using exponential backoff
 /// </summary>
 public class NodeWorker : BackgroundService
 {
@@ -19,6 +20,15 @@ public class NodeWorker : BackgroundService
     private int _requestId = 0;
     private string _nodeId = "node-host";  // Will be set from connect response
     private readonly ConcurrentDictionary<string, TaskCompletionSource<JsonElement?>> _pendingRequests = new();
+
+    // Reconnection settings
+    private const int MinReconnectDelayMs = 1000;      // 1 second
+    private const int MaxReconnectDelayMs = 300000;   // 5 minutes
+    private const double ReconnectBackoffMultiplier = 2.0;
+    private int _currentReconnectDelayMs = MinReconnectDelayMs;
+    private int _reconnectAttempts = 0;
+    private DateTime _lastConnectedTime = DateTime.MinValue;
+    private bool _wasConnected = false;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -53,17 +63,45 @@ public class NodeWorker : BackgroundService
             }
         }
 
-        // Main connection loop with auto-reconnect
+        // Main connection loop with auto-reconnect and exponential backoff
         while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
                 await ConnectAndRunAsync(config, stoppingToken);
+                
+                // If we get here, connection closed gracefully
+                // Reset backoff on clean disconnect
+                if (_wasConnected && (DateTime.UtcNow - _lastConnectedTime).TotalMinutes > 1)
+                {
+                    // Was connected for more than 1 minute, reset backoff
+                    ResetReconnectBackoff();
+                }
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                // Normal shutdown, don't retry
+                break;
             }
             catch (Exception ex) when (!stoppingToken.IsCancellationRequested)
             {
-                _logger.LogError(ex, "Connection failed, retrying in 10 seconds...");
-                await Task.Delay(10000, stoppingToken);
+                _reconnectAttempts++;
+                _logger.LogError(ex, "Connection failed (attempt {Attempt}), retrying in {Delay}ms...", 
+                    _reconnectAttempts, _currentReconnectDelayMs);
+                
+                try
+                {
+                    await Task.Delay(_currentReconnectDelayMs, stoppingToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                
+                // Increase delay with exponential backoff
+                _currentReconnectDelayMs = Math.Min(
+                    (int)(_currentReconnectDelayMs * ReconnectBackoffMultiplier),
+                    MaxReconnectDelayMs);
             }
         }
 
@@ -174,6 +212,11 @@ public class NodeWorker : BackgroundService
                 _nodeId = nodeIdProp.GetString() ?? "node-host";
             }
             _logger.LogInformation("Connected as Node: {DisplayName} (nodeId: {NodeId})", config.DisplayName, _nodeId);
+            
+            // Mark as connected and reset backoff
+            _wasConnected = true;
+            _lastConnectedTime = DateTime.UtcNow;
+            ResetReconnectBackoff();
         }
         else
         {
@@ -737,6 +780,13 @@ public class NodeWorker : BackgroundService
             if (result.EndOfMessage)
                 return messageBuilder.ToString();
         }
+    }
+
+    private void ResetReconnectBackoff()
+    {
+        _currentReconnectDelayMs = MinReconnectDelayMs;
+        _reconnectAttempts = 0;
+        _logger.LogDebug("Reconnect backoff reset");
     }
 
     public override async Task StopAsync(CancellationToken cancellationToken)
